@@ -28,12 +28,18 @@ async function getNextTask(): Promise<{
   return fetchJSON(`${COORDINATOR_URL}/next-task?agentId=${AGENT_ID}`);
 }
 
-async function reportDone(task: string, success: boolean) {
-  await fetchJSON(`${COORDINATOR_URL}/task-done`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ task, success }),
-  });
+async function reportDone(task: string, success: boolean): Promise<boolean> {
+  try {
+    await fetchJSON(`${COORDINATOR_URL}/task-done`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ task, success }),
+    });
+    return true;
+  } catch {
+    console.log(`[${AGENT_ID}] Coordinator unreachable after building ${task} — assuming all libs done.`);
+    return false;
+  }
 }
 
 function buildLib(taskName: string): boolean {
@@ -73,13 +79,21 @@ async function main() {
   console.log(`[${AGENT_ID}] Build plan: ${analysis.totalLibs} libs to build`);
 
   while (true) {
-    const { task, done } = await getNextTask();
+    let task: string | null;
+    let done: boolean;
+    try {
+      ({ task, done } = await getNextTask());
+    } catch {
+      console.log(`[${AGENT_ID}] Coordinator unreachable — assuming all libs done. Exiting.`);
+      break;
+    }
 
     if (task) {
       console.log(`[${AGENT_ID}] Assigned: ${task}`);
       const success = buildLib(task);
       // NX remote cache (MinIO) handles cache upload automatically
-      await reportDone(task, success);
+      const reported = await reportDone(task, success);
+      if (!reported) break;
     } else if (done) {
       console.log(`[${AGENT_ID}] All libs built. Exiting.`);
       break;
