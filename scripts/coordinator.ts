@@ -178,19 +178,63 @@ function isComplete(): boolean {
 // Initial promotion
 promoteReadyTasks();
 
+// Score a ready lib: lower = higher priority (builds it sooner to unblock an app).
+// For each app that needs this lib and isn't done yet, calculate how many deps
+// that app still needs (excluding this lib). The score is the minimum across all apps.
+// Libs that bring an app closest to starting get built first.
+function scoreLib(libName: string): number {
+  let minRemaining = Infinity;
+  for (const app of apps) {
+    if (tasks[app].state !== 'pending') continue;
+    const myDeps = appDeps[app] || [];
+    if (!myDeps.includes(libName)) continue;
+    // Count how many deps this app still needs (not done, not this lib)
+    const remaining = myDeps.filter(
+      (d) => d !== libName && tasks[d]?.state !== 'done'
+    ).length;
+    minRemaining = Math.min(minRemaining, remaining);
+  }
+  return minRemaining;
+}
+
 function getNextTask(agentId: string): {
   task: string | null;
   type: string | null;
   done: boolean;
 } {
-  // Prioritize: libs first, then apps, then deploys
-  for (const priority of ['lib', 'app', 'deploy'] as const) {
+  // 1. Ready libs — pick the one that unblocks an app build fastest
+  const readyLibs = Object.values(tasks).filter(
+    (t) => t.type === 'lib' && t.state === 'ready'
+  );
+  if (readyLibs.length > 0) {
+    readyLibs.sort((a, b) => scoreLib(a.name) - scoreLib(b.name));
+    const picked = readyLibs[0];
+    const score = scoreLib(picked.name);
+    picked.state = 'running';
+    picked.agentId = agentId;
+    picked.startTime = Date.now();
+    const closest = apps.find((app) => {
+      if (tasks[app].state !== 'pending') return false;
+      const myDeps = appDeps[app] || [];
+      if (!myDeps.includes(picked.name)) return false;
+      const remaining = myDeps.filter((d) => d !== picked.name && tasks[d]?.state !== 'done').length;
+      return remaining === score;
+    });
+    const reason = score === Infinity
+      ? '(no pending app needs it)'
+      : `(unblocks ${closest}: ${score} libs remaining after this)`;
+    console.log(`[${elapsed()}] 📦 [LIB] ${agentId} → ${picked.name} ${reason}`);
+    return { task: picked.name, type: 'lib', done: false };
+  }
+
+  // 2. Ready apps, then deploys
+  for (const priority of ['app', 'deploy'] as const) {
     for (const task of Object.values(tasks)) {
       if (task.type === priority && task.state === 'ready') {
         task.state = 'running';
         task.agentId = agentId;
         task.startTime = Date.now();
-        const icon = task.type === 'lib' ? '📦' : task.type === 'app' ? '🏗️' : '🚀';
+        const icon = task.type === 'app' ? '🏗️' : '🚀';
         console.log(`[${elapsed()}] ${icon} [${task.type.toUpperCase()}] ${agentId} → ${task.name}`);
         return { task: task.name, type: task.type, done: false };
       }
