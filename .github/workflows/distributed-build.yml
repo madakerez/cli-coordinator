@@ -139,6 +139,7 @@ jobs:
         run: npx tsx scripts/agent.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
+          AGENT_CONCURRENCY: '2'
 
   # ─── App builds: poll coordinator, start ASAP when their libs are cached in MinIO ───
   build-app1:

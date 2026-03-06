@@ -1,8 +1,9 @@
-import { execSync } from 'child_process';
+import { exec } from 'child_process';
 import { join } from 'path';
 
 const COORDINATOR_URL = process.env.COORDINATOR_URL || 'http://localhost:8765';
 const AGENT_ID = process.env.AGENT_ID || `agent-${process.pid}`;
+const CONCURRENCY = parseInt(process.env.AGENT_CONCURRENCY || '2', 10);
 const ROOT = join(__dirname, '..');
 const POLL_INTERVAL = 2000;
 
@@ -10,6 +11,7 @@ const agentStart = Date.now();
 let libsBuilt = 0;
 let libsFailed = 0;
 let totalBuildTime = 0;
+let shuttingDown = false;
 
 function fmtDuration(ms: number): string {
   const s = ms / 1000;
@@ -57,24 +59,31 @@ async function reportDone(task: string, success: boolean): Promise<boolean> {
   }
 }
 
-function buildLib(taskName: string): { success: boolean; duration: number } {
-  log(`🔨 Building ${taskName}...`);
-  const start = Date.now();
-  try {
-    execSync(`npx nx run ${taskName}:build`, {
-      cwd: ROOT,
-      stdio: 'inherit',
-      env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
-      timeout: 300_000,
-    });
-    const duration = Date.now() - start;
-    log(`✅ ${taskName} built in ${fmtDuration(duration)}`);
-    return { success: true, duration };
-  } catch (e) {
-    const duration = Date.now() - start;
-    log(`❌ ${taskName} FAILED after ${fmtDuration(duration)}`);
-    return { success: false, duration };
-  }
+function buildLib(taskName: string): Promise<{ success: boolean; duration: number }> {
+  return new Promise((resolve) => {
+    log(`🔨 Building ${taskName}...`);
+    const start = Date.now();
+    exec(
+      `npx nx run ${taskName}:build`,
+      {
+        cwd: ROOT,
+        env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
+        timeout: 300_000,
+        maxBuffer: 10 * 1024 * 1024,
+      },
+      (error, stdout, stderr) => {
+        const duration = Date.now() - start;
+        if (error) {
+          log(`❌ ${taskName} FAILED after ${fmtDuration(duration)}`);
+          if (stderr) console.error(stderr.slice(-500));
+          resolve({ success: false, duration });
+        } else {
+          log(`✅ ${taskName} built in ${fmtDuration(duration)}`);
+          resolve({ success: true, duration });
+        }
+      }
+    );
+  });
 }
 
 async function waitForCoordinator() {
@@ -99,6 +108,7 @@ function printSummary() {
   console.log(`┌─────────────────────────────────────┐`);
   console.log(`│  📊 ${AGENT_ID} Summary`.padEnd(38) + '│');
   console.log(`├─────────────────────────────────────┤`);
+  console.log(`│  Concurrency: ${CONCURRENCY}`.padEnd(38) + '│');
   console.log(`│  Total time:  ${totalTime}`.padEnd(38) + '│');
   console.log(`│  Libs built:  ${libsBuilt}`.padEnd(38) + '│');
   if (libsFailed > 0) {
@@ -108,10 +118,47 @@ function printSummary() {
   console.log(`└─────────────────────────────────────┘`);
 }
 
+async function worker(workerId: number) {
+  const wTag = `w${workerId}`;
+  while (!shuttingDown) {
+    let task: string | null;
+    let done: boolean;
+    try {
+      ({ task, done } = await getNextTask());
+    } catch {
+      log(`📡 [${wTag}] Coordinator unreachable — stopping`);
+      shuttingDown = true;
+      break;
+    }
+
+    if (task) {
+      const { success, duration } = await buildLib(task);
+      if (success) {
+        libsBuilt++;
+        totalBuildTime += duration;
+      } else {
+        libsFailed++;
+      }
+      const reported = await reportDone(task, success);
+      if (!reported) {
+        shuttingDown = true;
+        break;
+      }
+    } else if (done) {
+      log(`🏁 [${wTag}] All libs built — stopping`);
+      shuttingDown = true;
+      break;
+    } else {
+      await new Promise((r) => setTimeout(r, POLL_INTERVAL));
+    }
+  }
+}
+
 async function main() {
   console.log('');
   console.log(`🤖 ${AGENT_ID} starting up`);
   console.log(`   Coordinator: ${COORDINATOR_URL}`);
+  console.log(`   Concurrency: ${CONCURRENCY}`);
   console.log(`   Cache: NX remote cache (MinIO)`);
   console.log('');
 
@@ -121,33 +168,8 @@ async function main() {
   log(`📋 ${analysis.totalLibs} libs in build plan, ${analysis.totalApps} apps`);
   console.log('');
 
-  while (true) {
-    let task: string | null;
-    let done: boolean;
-    try {
-      ({ task, done } = await getNextTask());
-    } catch {
-      log(`📡 Coordinator unreachable — work complete`);
-      break;
-    }
-
-    if (task) {
-      const { success, duration } = buildLib(task);
-      if (success) {
-        libsBuilt++;
-        totalBuildTime += duration;
-      } else {
-        libsFailed++;
-      }
-      const reported = await reportDone(task, success);
-      if (!reported) break;
-    } else if (done) {
-      log('🏁 All libs built — shutting down');
-      break;
-    } else {
-      await new Promise((r) => setTimeout(r, POLL_INTERVAL));
-    }
-  }
+  const workers = Array.from({ length: CONCURRENCY }, (_, i) => worker(i + 1));
+  await Promise.all(workers);
 
   printSummary();
 }
