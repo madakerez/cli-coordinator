@@ -2,10 +2,10 @@
 // and which apps depend on which libs.
 //
 // Designed so each app has a DIFFERENT number of dependencies:
-//   app2: lightweight  (4 libs)  — starts building first
-//   app3: medium       (15 libs) — starts mid-way
-//   app1: heavy        (19 libs) — starts later
-//   app4: heaviest     (25 libs) — starts last (depends on libs from app1/app2 too)
+//   app2: lightweight  (~24 libs)  — starts building first
+//   app3: medium       (~44 libs)  — starts mid-way
+//   app1: heavy        (~48 libs)  — starts later
+//   app4: heaviest     (~70 libs)  — starts last (depends on libs from app1/app2/app3 too)
 
 export const sharedLibs = [
   'shared-config',
@@ -16,6 +16,18 @@ export const sharedLibs = [
   'shared-http',
   'shared-logging',
   'shared-testing',
+  'shared-cache',
+  'shared-events',
+  'shared-i18n',
+  'shared-crypto',
+  'shared-validation',
+  'shared-notifications',
+  'shared-permissions',
+  'shared-analytics',
+  'shared-storage',
+  'shared-queue',
+  'shared-metrics',
+  'shared-feature-flags',
 ] as const;
 
 export const app1Libs = [
@@ -30,6 +42,31 @@ export const app1Libs = [
   'app1-ui-forms',
   'app1-util-validators',
   'app1-util-formatters',
+  'app1-feature-chat',
+  'app1-feature-calendar',
+  'app1-feature-analytics',
+  'app1-feature-search',
+  'app1-feature-files',
+  'app1-feature-tasks',
+  'app1-feature-comments',
+  'app1-feature-tags',
+  'app1-feature-export',
+  'app1-feature-import',
+  'app1-feature-billing',
+  'app1-feature-audit',
+  'app1-feature-webhooks',
+  'app1-feature-integrations',
+  'app1-ui-modals',
+  'app1-ui-tables',
+  'app1-ui-cards',
+  'app1-ui-navigation',
+  'app1-util-dates',
+  'app1-util-math',
+  'app1-util-strings',
+  'app1-util-colors',
+  'app1-util-csv',
+  'app1-data-sync',
+  'app1-data-cache',
 ] as const;
 
 export const app2Libs = [
@@ -44,6 +81,26 @@ export const app2Libs = [
   'app2-ui-charts',
   'app2-util-validators',
   'app2-util-transforms',
+  'app2-feature-compare',
+  'app2-feature-export',
+  'app2-feature-import',
+  'app2-feature-filters',
+  'app2-feature-tags',
+  'app2-feature-categories',
+  'app2-feature-reviews',
+  'app2-feature-ratings',
+  'app2-feature-bookmarks',
+  'app2-feature-sharing',
+  'app2-feature-notifications',
+  'app2-feature-history',
+  'app2-ui-cards',
+  'app2-ui-lists',
+  'app2-ui-forms',
+  'app2-ui-modals',
+  'app2-util-formatting',
+  'app2-util-sorting',
+  'app2-util-filtering',
+  'app2-util-dates',
 ] as const;
 
 export const app3Libs = [
@@ -57,6 +114,28 @@ export const app3Libs = [
   'app3-ui-layout',
   'app3-ui-toolbar',
   'app3-util-validators',
+  'app3-feature-templates',
+  'app3-feature-export',
+  'app3-feature-import',
+  'app3-feature-comments',
+  'app3-feature-versioning',
+  'app3-feature-sharing',
+  'app3-feature-search',
+  'app3-feature-media',
+  'app3-feature-formatting',
+  'app3-feature-plugins',
+  'app3-feature-themes',
+  'app3-feature-analytics',
+  'app3-ui-panels',
+  'app3-ui-modals',
+  'app3-ui-forms',
+  'app3-ui-cards',
+  'app3-ui-tree',
+  'app3-util-markdown',
+  'app3-util-html',
+  'app3-util-diff',
+  'app3-util-compression',
+  'app3-data-sync',
 ] as const;
 
 export const app4Libs = [
@@ -71,6 +150,41 @@ export const app4Libs = [
   'app4-ui-charts',
   'app4-util-validators',
   'app4-util-parsers',
+  'app4-feature-alerts',
+  'app4-feature-dashboards',
+  'app4-feature-users',
+  'app4-feature-roles',
+  'app4-feature-audit',
+  'app4-feature-billing',
+  'app4-feature-integrations',
+  'app4-feature-webhooks',
+  'app4-feature-scheduler',
+  'app4-feature-import',
+  'app4-feature-templates',
+  'app4-feature-search',
+  'app4-feature-notifications',
+  'app4-feature-analytics-deep',
+  'app4-feature-compliance',
+  'app4-feature-backup',
+  'app4-feature-migration',
+  'app4-feature-sso',
+  'app4-feature-api-keys',
+  'app4-feature-logging',
+  'app4-ui-tables',
+  'app4-ui-forms',
+  'app4-ui-modals',
+  'app4-ui-panels',
+  'app4-ui-navigation',
+  'app4-ui-cards',
+  'app4-ui-badges',
+  'app4-util-dates',
+  'app4-util-crypto',
+  'app4-util-csv',
+  'app4-util-json',
+  'app4-util-formatting',
+  'app4-data-sync',
+  'app4-data-cache',
+  'app4-data-aggregator',
 ] as const;
 
 export const allLibs = [
@@ -83,7 +197,7 @@ export const allLibs = [
 
 // Lib-to-lib dependencies (what each lib imports from)
 export const libDeps: Record<string, string[]> = {
-  // Shared libs - layered dependencies
+  // ── Shared libs ──
   'shared-config': [],
   'shared-models': ['shared-config'],
   'shared-utils': ['shared-config'],
@@ -92,8 +206,20 @@ export const libDeps: Record<string, string[]> = {
   'shared-auth': ['shared-http', 'shared-models'],
   'shared-logging': ['shared-config'],
   'shared-testing': ['shared-utils'],
+  'shared-cache': ['shared-config'],
+  'shared-events': ['shared-config', 'shared-models'],
+  'shared-i18n': [],
+  'shared-crypto': ['shared-utils'],
+  'shared-validation': ['shared-utils', 'shared-models'],
+  'shared-notifications': ['shared-events', 'shared-models'],
+  'shared-permissions': ['shared-auth', 'shared-models'],
+  'shared-analytics': ['shared-events', 'shared-http'],
+  'shared-storage': ['shared-config'],
+  'shared-queue': ['shared-events', 'shared-logging'],
+  'shared-metrics': ['shared-logging', 'shared-config'],
+  'shared-feature-flags': ['shared-config', 'shared-http'],
 
-  // App1 libs — depend on many shared libs
+  // ── App1 libs — depend on many shared libs ──
   'app1-data-access': ['shared-http', 'shared-models'],
   'app1-feature-home': ['app1-data-access', 'shared-ui'],
   'app1-feature-profile': ['app1-data-access', 'shared-auth'],
@@ -105,9 +231,33 @@ export const libDeps: Record<string, string[]> = {
   'app1-ui-forms': ['shared-ui', 'app1-util-validators'],
   'app1-util-validators': ['shared-utils'],
   'app1-util-formatters': ['shared-utils'],
+  'app1-feature-chat': ['app1-data-access', 'shared-events'],
+  'app1-feature-calendar': ['app1-data-access', 'shared-ui', 'shared-i18n'],
+  'app1-feature-analytics': ['app1-data-access', 'shared-analytics', 'app1-ui-components'],
+  'app1-feature-search': ['app1-data-access', 'shared-ui'],
+  'app1-feature-files': ['app1-data-access', 'shared-storage'],
+  'app1-feature-tasks': ['app1-data-access', 'shared-ui', 'app1-ui-forms'],
+  'app1-feature-comments': ['app1-data-access', 'shared-events'],
+  'app1-feature-tags': ['app1-data-access'],
+  'app1-feature-export': ['app1-data-access', 'shared-storage'],
+  'app1-feature-import': ['app1-data-access', 'shared-validation'],
+  'app1-feature-billing': ['app1-data-access', 'shared-crypto', 'shared-permissions'],
+  'app1-feature-audit': ['app1-data-access', 'shared-logging'],
+  'app1-feature-webhooks': ['app1-data-access', 'shared-http', 'shared-events'],
+  'app1-feature-integrations': ['app1-data-access', 'shared-http', 'shared-auth'],
+  'app1-ui-modals': ['shared-ui', 'app1-ui-components'],
+  'app1-ui-tables': ['shared-ui', 'app1-ui-components'],
+  'app1-ui-cards': ['shared-ui'],
+  'app1-ui-navigation': ['shared-ui', 'app1-ui-layout'],
+  'app1-util-dates': ['shared-utils', 'shared-i18n'],
+  'app1-util-math': [],
+  'app1-util-strings': ['shared-utils'],
+  'app1-util-colors': [],
+  'app1-util-csv': ['app1-util-strings'],
+  'app1-data-sync': ['app1-data-access', 'shared-events', 'shared-queue'],
+  'app1-data-cache': ['app1-data-access', 'shared-cache'],
 
-  // App2 libs — MINIMAL shared deps, mostly self-contained
-  // Only shared-config is needed, NO shared-http, NO shared-auth, NO shared-ui
+  // ── App2 libs — MINIMAL shared deps, mostly self-contained ──
   'app2-data-access': ['shared-config'],
   'app2-feature-home': ['app2-data-access'],
   'app2-feature-search': ['app2-data-access'],
@@ -119,8 +269,28 @@ export const libDeps: Record<string, string[]> = {
   'app2-ui-charts': ['app2-ui-components'],
   'app2-util-validators': ['shared-config'],
   'app2-util-transforms': ['shared-config'],
+  'app2-feature-compare': ['app2-data-access'],
+  'app2-feature-export': ['app2-data-access'],
+  'app2-feature-import': ['app2-data-access'],
+  'app2-feature-filters': ['app2-data-access', 'app2-ui-components'],
+  'app2-feature-tags': ['app2-data-access'],
+  'app2-feature-categories': ['app2-data-access', 'app2-ui-components'],
+  'app2-feature-reviews': ['app2-data-access'],
+  'app2-feature-ratings': ['app2-data-access'],
+  'app2-feature-bookmarks': ['app2-data-access'],
+  'app2-feature-sharing': ['app2-data-access', 'shared-config'],
+  'app2-feature-notifications': ['app2-data-access'],
+  'app2-feature-history': ['app2-data-access'],
+  'app2-ui-cards': ['app2-ui-components'],
+  'app2-ui-lists': ['app2-ui-components'],
+  'app2-ui-forms': ['app2-ui-components'],
+  'app2-ui-modals': ['app2-ui-components'],
+  'app2-util-formatting': [],
+  'app2-util-sorting': [],
+  'app2-util-filtering': [],
+  'app2-util-dates': [],
 
-  // App3 libs — moderate shared deps
+  // ── App3 libs — moderate shared deps ──
   'app3-data-access': ['shared-http', 'shared-models'],
   'app3-feature-home': ['app3-data-access', 'shared-ui'],
   'app3-feature-editor': ['app3-data-access', 'shared-ui', 'app3-ui-toolbar'],
@@ -131,8 +301,30 @@ export const libDeps: Record<string, string[]> = {
   'app3-ui-layout': ['shared-ui', 'app3-ui-components'],
   'app3-ui-toolbar': ['shared-ui', 'app3-ui-components'],
   'app3-util-validators': ['shared-utils'],
+  'app3-feature-templates': ['app3-data-access', 'shared-ui'],
+  'app3-feature-export': ['app3-data-access', 'shared-storage'],
+  'app3-feature-import': ['app3-data-access', 'shared-validation'],
+  'app3-feature-comments': ['app3-data-access', 'shared-events'],
+  'app3-feature-versioning': ['app3-data-access', 'app3-feature-history'],
+  'app3-feature-sharing': ['app3-data-access', 'shared-auth', 'shared-permissions'],
+  'app3-feature-search': ['app3-data-access', 'shared-ui'],
+  'app3-feature-media': ['app3-data-access', 'shared-storage'],
+  'app3-feature-formatting': ['app3-data-access', 'shared-ui', 'app3-ui-toolbar'],
+  'app3-feature-plugins': ['app3-data-access', 'shared-config'],
+  'app3-feature-themes': ['app3-data-access', 'shared-ui'],
+  'app3-feature-analytics': ['app3-data-access', 'shared-analytics'],
+  'app3-ui-panels': ['shared-ui', 'app3-ui-components'],
+  'app3-ui-modals': ['shared-ui', 'app3-ui-components'],
+  'app3-ui-forms': ['shared-ui', 'app3-ui-components'],
+  'app3-ui-cards': ['shared-ui'],
+  'app3-ui-tree': ['shared-ui', 'app3-ui-components'],
+  'app3-util-markdown': ['shared-utils'],
+  'app3-util-html': ['shared-utils'],
+  'app3-util-diff': ['shared-utils'],
+  'app3-util-compression': [],
+  'app3-data-sync': ['app3-data-access', 'shared-events', 'shared-queue'],
 
-  // App4 libs — HEAVY, depends on shared + cross-app libs from app1 and app2
+  // ── App4 libs — HEAVY, depends on shared + cross-app libs ──
   'app4-data-access': ['shared-http', 'shared-models', 'shared-logging'],
   'app4-feature-home': ['app4-data-access', 'shared-ui'],
   'app4-feature-reports': ['app4-data-access', 'app4-ui-charts', 'app1-data-access'],
@@ -144,35 +336,72 @@ export const libDeps: Record<string, string[]> = {
   'app4-ui-charts': ['shared-ui', 'shared-utils'],
   'app4-util-validators': ['shared-utils'],
   'app4-util-parsers': ['shared-utils', 'shared-models'],
+  'app4-feature-alerts': ['app4-data-access', 'shared-notifications', 'shared-events'],
+  'app4-feature-dashboards': ['app4-data-access', 'app4-ui-charts', 'shared-ui'],
+  'app4-feature-users': ['app4-data-access', 'shared-auth', 'shared-permissions'],
+  'app4-feature-roles': ['app4-data-access', 'shared-permissions'],
+  'app4-feature-audit': ['app4-data-access', 'shared-logging', 'app1-feature-audit'],
+  'app4-feature-billing': ['app4-data-access', 'shared-crypto', 'app1-feature-billing'],
+  'app4-feature-integrations': ['app4-data-access', 'shared-http', 'shared-events'],
+  'app4-feature-webhooks': ['app4-data-access', 'shared-http', 'shared-events'],
+  'app4-feature-scheduler': ['app4-data-access', 'shared-queue', 'shared-events'],
+  'app4-feature-import': ['app4-data-access', 'app4-util-parsers', 'shared-validation'],
+  'app4-feature-templates': ['app4-data-access', 'shared-ui', 'app3-feature-templates'],
+  'app4-feature-search': ['app4-data-access', 'shared-ui'],
+  'app4-feature-notifications': ['app4-data-access', 'shared-notifications'],
+  'app4-feature-analytics-deep': ['app4-data-access', 'app4-ui-charts', 'shared-analytics', 'app2-ui-charts'],
+  'app4-feature-compliance': ['app4-data-access', 'shared-permissions', 'shared-logging'],
+  'app4-feature-backup': ['app4-data-access', 'shared-storage', 'shared-queue'],
+  'app4-feature-migration': ['app4-data-access', 'shared-validation', 'app4-util-parsers'],
+  'app4-feature-sso': ['app4-data-access', 'shared-auth', 'shared-crypto'],
+  'app4-feature-api-keys': ['app4-data-access', 'shared-auth', 'shared-crypto'],
+  'app4-feature-logging': ['app4-data-access', 'shared-logging', 'shared-metrics'],
+  'app4-ui-tables': ['shared-ui', 'app4-ui-components'],
+  'app4-ui-forms': ['shared-ui', 'app4-ui-components'],
+  'app4-ui-modals': ['shared-ui', 'app4-ui-components'],
+  'app4-ui-panels': ['shared-ui', 'app4-ui-components'],
+  'app4-ui-navigation': ['shared-ui', 'app4-ui-layout'],
+  'app4-ui-cards': ['shared-ui'],
+  'app4-ui-badges': ['shared-ui'],
+  'app4-util-dates': ['shared-utils'],
+  'app4-util-crypto': ['shared-crypto'],
+  'app4-util-csv': ['shared-utils'],
+  'app4-util-json': ['shared-utils', 'shared-models'],
+  'app4-util-formatting': ['shared-utils'],
+  'app4-data-sync': ['app4-data-access', 'shared-events', 'shared-queue'],
+  'app4-data-cache': ['app4-data-access', 'shared-cache'],
+  'app4-data-aggregator': ['app4-data-access', 'shared-metrics', 'app4-ui-charts'],
 };
 
 // App-to-lib dependencies (direct imports in each app's main.ts)
-// NX will also detect transitive deps, but these are the explicit imports.
 export const appDeps: Record<string, string[]> = {
-  // app1: heavy — 8 shared + 11 own = 19 libs
+  // app1: heavy — 16 shared + 36 own = 52 libs (with transitive)
   app1: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-auth', 'shared-http', 'shared-logging',
+    'shared-auth', 'shared-http', 'shared-logging', 'shared-cache',
+    'shared-events', 'shared-i18n', 'shared-crypto', 'shared-validation',
+    'shared-permissions', 'shared-analytics', 'shared-storage', 'shared-queue',
     ...app1Libs,
   ],
-  // app2: lightweight — only shared-config + 3 own = 4 direct deps
-  // No shared-http, no shared-auth, no shared-ui — self-contained app
+  // app2: lightweight — shared-config + all own = ~32 libs (mostly self-contained)
   app2: [
     'shared-config',
-    'app2-data-access',
-    'app2-feature-home',
-    'app2-ui-components',
+    ...app2Libs,
   ],
-  // app3: medium — 5 shared + 10 own = 15 libs
+  // app3: medium — 12 shared + 32 own = ~44 libs
   app3: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-http',
+    'shared-http', 'shared-auth', 'shared-events', 'shared-validation',
+    'shared-permissions', 'shared-analytics', 'shared-storage', 'shared-queue',
     ...app3Libs,
   ],
-  // app4: heaviest — 7 shared + 11 own + cross-app deps resolved transitively = ~25+ libs
+  // app4: heaviest — 18 shared + 46 own + cross-app deps = ~70+ libs
   app4: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-auth', 'shared-http', 'shared-logging',
+    'shared-auth', 'shared-http', 'shared-logging', 'shared-cache',
+    'shared-events', 'shared-crypto', 'shared-validation',
+    'shared-notifications', 'shared-permissions', 'shared-analytics',
+    'shared-storage', 'shared-queue', 'shared-metrics', 'shared-feature-flags',
     ...app4Libs,
   ],
 };
