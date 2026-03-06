@@ -120,17 +120,16 @@ jobs:
         env:
           AGENT_ID: agent-${{ matrix.agent }}
 
-  # ─── App builds: each polls coordinator, builds when libs ready ───
+  # ─── App builds: each polls coordinator until its libs are ready ───
   build-app1:
+    name: "Build app1"
     runs-on: ubuntu-latest
-    needs: [] # starts immediately, polls coordinator
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm ci
-
       - name: Wait for tunnel URL
         run: |
           for i in $(seq 1 60); do
@@ -139,56 +138,44 @@ jobs:
             if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
               mkdir -p /tmp/tunnel
               gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
-              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
-              break
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
             fi
-            echo "Waiting for coordinator... ($i/60)"
-            sleep 5
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
           done
           if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Wait for app1 libs to be ready
+      - name: Wait for app1 libs
         run: |
-          echo "Polling coordinator for app1 lib readiness..."
+          echo "Waiting for 18 lib dependencies..."
           while true; do
             STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app1" 2>/dev/null) || { sleep 5; continue; }
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
             echo "$(date +%H:%M:%S) app1: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then
-              echo "✅ All libs for app1 are built!"
-              break
-            fi
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app1 are built!"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-
       - name: Build app1
         run: npx nx build app1
-
-      - name: Deploy app1
-        run: |
-          echo "=== Deploying app1 ==="
-          ls -la dist/apps/app1/browser/
-          echo "Uploading to https://app1.example.com..."
-          sleep 2
-          echo "Health check passed"
-          echo "✅ app1 deployed successfully!"
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app1
+          path: dist/apps/app1
 
   build-app2:
+    name: "Build app2"
     runs-on: ubuntu-latest
-    needs: []
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm ci
-
       - name: Wait for tunnel URL
         run: |
           for i in $(seq 1 60); do
@@ -197,56 +184,44 @@ jobs:
             if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
               mkdir -p /tmp/tunnel
               gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
-              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
-              break
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
             fi
-            echo "Waiting for coordinator... ($i/60)"
-            sleep 5
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
           done
           if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Wait for app2 libs to be ready
+      - name: Wait for app2 libs
         run: |
-          echo "Polling coordinator for app2 lib readiness..."
+          echo "Waiting for 4 lib dependencies..."
           while true; do
             STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app2" 2>/dev/null) || { sleep 5; continue; }
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
             echo "$(date +%H:%M:%S) app2: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then
-              echo "✅ All libs for app2 are built!"
-              break
-            fi
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app2 are built!"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-
       - name: Build app2
         run: npx nx build app2
-
-      - name: Deploy app2
-        run: |
-          echo "=== Deploying app2 ==="
-          ls -la dist/apps/app2/browser/
-          echo "Uploading to https://app2.example.com..."
-          sleep 2
-          echo "Health check passed"
-          echo "✅ app2 deployed successfully!"
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app2
+          path: dist/apps/app2
 
   build-app3:
+    name: "Build app3"
     runs-on: ubuntu-latest
-    needs: []
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm ci
-
       - name: Wait for tunnel URL
         run: |
           for i in $(seq 1 60); do
@@ -255,56 +230,44 @@ jobs:
             if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
               mkdir -p /tmp/tunnel
               gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
-              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
-              break
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
             fi
-            echo "Waiting for coordinator... ($i/60)"
-            sleep 5
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
           done
           if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Wait for app3 libs to be ready
+      - name: Wait for app3 libs
         run: |
-          echo "Polling coordinator for app3 lib readiness..."
+          echo "Waiting for 16 lib dependencies..."
           while true; do
             STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app3" 2>/dev/null) || { sleep 5; continue; }
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
             echo "$(date +%H:%M:%S) app3: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then
-              echo "✅ All libs for app3 are built!"
-              break
-            fi
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app3 are built!"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-
       - name: Build app3
         run: npx nx build app3
-
-      - name: Deploy app3
-        run: |
-          echo "=== Deploying app3 ==="
-          ls -la dist/apps/app3/browser/
-          echo "Uploading to https://app3.example.com..."
-          sleep 2
-          echo "Health check passed"
-          echo "✅ app3 deployed successfully!"
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app3
+          path: dist/apps/app3
 
   build-app4:
+    name: "Build app4"
     runs-on: ubuntu-latest
-    needs: []
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
       - run: npm ci
-
       - name: Wait for tunnel URL
         run: |
           for i in $(seq 1 60); do
@@ -313,42 +276,116 @@ jobs:
             if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
               mkdir -p /tmp/tunnel
               gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
-              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
-              break
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
             fi
-            echo "Waiting for coordinator... ($i/60)"
-            sleep 5
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
           done
           if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-
-      - name: Wait for app4 libs to be ready
+      - name: Wait for app4 libs
         run: |
-          echo "Polling coordinator for app4 lib readiness..."
+          echo "Waiting for 23 lib dependencies..."
           while true; do
             STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app4" 2>/dev/null) || { sleep 5; continue; }
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
             echo "$(date +%H:%M:%S) app4: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then
-              echo "✅ All libs for app4 are built!"
-              break
-            fi
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app4 are built!"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-
       - name: Build app4
         run: npx nx build app4
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app4
+          path: dist/apps/app4
 
+  # ─── Deploys: separate job per app, depends on its build ───
+  deploy-app1:
+    name: "Deploy app1"
+    needs: [build-app1]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-app1
+          path: dist/
+      - name: Deploy app1
+        run: |
+          echo "=== Deploying app1 ==="
+          echo "Checking build artifacts..."
+          ls -la dist/
+          echo "Uploading to https://app1.example.com..."
+          sleep 2
+          echo "Running health check..."
+          sleep 1
+          echo "✅ app1 deployed successfully!"
+
+  deploy-app2:
+    name: "Deploy app2"
+    needs: [build-app2]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-app2
+          path: dist/
+      - name: Deploy app2
+        run: |
+          echo "=== Deploying app2 ==="
+          echo "Checking build artifacts..."
+          ls -la dist/
+          echo "Uploading to https://app2.example.com..."
+          sleep 2
+          echo "Running health check..."
+          sleep 1
+          echo "✅ app2 deployed successfully!"
+
+  deploy-app3:
+    name: "Deploy app3"
+    needs: [build-app3]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-app3
+          path: dist/
+      - name: Deploy app3
+        run: |
+          echo "=== Deploying app3 ==="
+          echo "Checking build artifacts..."
+          ls -la dist/
+          echo "Uploading to https://app3.example.com..."
+          sleep 2
+          echo "Running health check..."
+          sleep 1
+          echo "✅ app3 deployed successfully!"
+
+  deploy-app4:
+    name: "Deploy app4"
+    needs: [build-app4]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-app4
+          path: dist/
       - name: Deploy app4
         run: |
           echo "=== Deploying app4 ==="
-          ls -la dist/apps/app4/browser/
+          echo "Checking build artifacts..."
+          ls -la dist/
           echo "Uploading to https://app4.example.com..."
           sleep 2
-          echo "Health check passed"
+          echo "Running health check..."
+          sleep 1
           echo "✅ app4 deployed successfully!"
