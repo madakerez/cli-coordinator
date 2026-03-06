@@ -59,10 +59,20 @@ jobs:
         run: |
           while true; do
             STATUS=$(curl -sf http://localhost:8765/status)
-            echo "$(date +%H:%M:%S) $STATUS"
+            LIBS_DONE=$(echo "$STATUS" | jq -r '.libs.done')
+            LIBS_TOTAL=$(echo "$STATUS" | jq -r '.libs.total')
+            APPS_DONE=$(echo "$STATUS" | jq -r '.apps.done')
+            APPS_TOTAL=$(echo "$STATUS" | jq -r '.apps.total')
+            DEPLOYS_DONE=$(echo "$STATUS" | jq -r '.deploys.done')
+            DEPLOYS_TOTAL=$(echo "$STATUS" | jq -r '.deploys.total')
+            RUNNING=$(echo "$STATUS" | jq -r '.running')
+            echo "$(date +%H:%M:%S) | libs: ${LIBS_DONE}/${LIBS_TOTAL} | apps: ${APPS_DONE}/${APPS_TOTAL} | deploys: ${DEPLOYS_DONE}/${DEPLOYS_TOTAL} | running: ${RUNNING}"
+            # Show per-app status
+            echo "$STATUS" | jq -r '.appStatus[] | "  \(.name): \(.state) (libs: \(.libsReady)/\(.libsNeeded), deploy: \(.deployState))"'
             COMPLETE=$(echo "$STATUS" | jq -r '.complete')
             if [ "$COMPLETE" = "true" ]; then
-              echo "All tasks complete!"
+              echo ""
+              echo "=== ALL TASKS COMPLETE ==="
               curl -sf http://localhost:8765/timeline
               break
             fi

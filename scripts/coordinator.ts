@@ -113,6 +113,24 @@ for (const name of apps) {
   tasks[`deploy:${name}`] = { name: `deploy:${name}`, type: 'deploy', state: 'pending' };
 }
 
+function logAppProgress() {
+  for (const app of apps) {
+    if (tasks[app].state !== 'pending') continue;
+    const myDeps = appDeps[app] || [];
+    const doneCount = myDeps.filter((d) => tasks[d]?.state === 'done').length;
+    const remaining = myDeps.length - doneCount;
+    if (remaining > 0) {
+      const missing = myDeps
+        .filter((d) => tasks[d]?.state !== 'done')
+        .slice(0, 5);
+      const extra = myDeps.filter((d) => tasks[d]?.state !== 'done').length - missing.length;
+      console.log(
+        `[${elapsed()}]   ${app}: waiting for ${remaining}/${myDeps.length} libs [${missing.join(', ')}${extra > 0 ? `, +${extra} more` : ''}]`
+      );
+    }
+  }
+}
+
 function promoteReadyTasks() {
   // 1. Promote libs whose lib-dependencies are all done
   for (const lib of libs) {
@@ -132,7 +150,7 @@ function promoteReadyTasks() {
       if (!appBuildStarted.has(app)) {
         appBuildStarted.add(app);
         const doneLibs = libs.filter((l) => tasks[l].state === 'done').length;
-        console.log(`[${elapsed()}] >>> ${app} READY (all ${myDeps.length} lib deps built, ${doneLibs}/${libs.length} libs total)`);
+        console.log(`[${elapsed()}] >>> APP READY: ${app} — all ${myDeps.length} lib deps built (${doneLibs}/${libs.length} libs total) => starting build`);
       }
     }
   }
@@ -143,8 +161,10 @@ function promoteReadyTasks() {
     if (tasks[deployName].state !== 'pending') continue;
     if (tasks[app].state === 'done') {
       tasks[deployName].state = 'ready';
+      console.log(`[${elapsed()}] >>> DEPLOY READY: ${app} — app build complete => starting deploy`);
     } else if (tasks[app].state === 'failed') {
       tasks[deployName].state = 'failed';
+      console.log(`[${elapsed()}] >>> DEPLOY SKIPPED: ${app} — app build failed`);
     }
   }
 }
@@ -170,7 +190,8 @@ function getNextTask(agentId: string): {
         task.state = 'running';
         task.agentId = agentId;
         task.startTime = Date.now();
-        console.log(`[${elapsed()}] [${task.type}] ${agentId} → ${task.name}`);
+        const icon = task.type === 'lib' ? '📦' : task.type === 'app' ? '🏗️' : '🚀';
+        console.log(`[${elapsed()}] ${icon} [${task.type.toUpperCase()}] ${agentId} → ${task.name}`);
         return { task: task.name, type: task.type, done: false };
       }
     }
@@ -196,29 +217,64 @@ function markTaskDone(taskName: string, success: boolean) {
   });
 
   const duration = ((task.endTime - task.startTime!) / 1000).toFixed(1);
+  const icon = task.type === 'lib' ? '📦' : task.type === 'app' ? '🏗️' : '🚀';
   console.log(
-    `[${elapsed()}] [${task.type}] ${task.name} ${success ? 'DONE' : 'FAILED'} (${task.agentId}, ${duration}s)`
+    `[${elapsed()}] ${icon} [${task.type.toUpperCase()}] ${task.name} ${success ? '✅ DONE' : '❌ FAILED'} (${task.agentId}, ${duration}s)`
   );
+
+  // After a lib completes, show progress toward app readiness
+  if (task.type === 'lib') {
+    logAppProgress();
+  }
 
   promoteReadyTasks();
 
   if (isComplete()) {
-    console.log(`\n=== ALL TASKS COMPLETE ===`);
+    const doneCount = Object.values(tasks).filter((t) => t.state === 'done').length;
+    const failedCount = Object.values(tasks).filter((t) => t.state === 'failed').length;
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`=== ALL TASKS COMPLETE === (${doneCount} done, ${failedCount} failed, ${((Date.now() - globalStart) / 1000).toFixed(1)}s)`);
+    console.log(`${'='.repeat(60)}`);
   }
 }
 
 function getStatus() {
   const counts = { pending: 0, ready: 0, running: 0, done: 0, failed: 0 };
-  const byType = { libs: { done: 0, total: libs.length }, apps: { done: 0, total: apps.length }, deploys: { done: 0, total: apps.length } };
+  const byType = {
+    libs: { done: 0, failed: 0, running: 0, total: libs.length },
+    apps: { done: 0, failed: 0, running: 0, total: apps.length },
+    deploys: { done: 0, failed: 0, running: 0, total: apps.length },
+  };
   for (const task of Object.values(tasks)) {
     counts[task.state]++;
-    if (task.state === 'done') {
-      if (task.type === 'lib') byType.libs.done++;
-      else if (task.type === 'app') byType.apps.done++;
-      else if (task.type === 'deploy') byType.deploys.done++;
-    }
+    const bucket = task.type === 'lib' ? byType.libs : task.type === 'app' ? byType.apps : byType.deploys;
+    if (task.state === 'done') bucket.done++;
+    else if (task.state === 'failed') bucket.failed++;
+    else if (task.state === 'running') bucket.running++;
   }
-  return { ...counts, total: Object.keys(tasks).length, complete: isComplete(), ...byType };
+
+  // Per-app readiness info
+  const appStatus = apps.map((app) => {
+    const myDeps = appDeps[app] || [];
+    const doneCount = myDeps.filter((d) => tasks[d]?.state === 'done').length;
+    return {
+      name: app,
+      state: tasks[app].state,
+      libsReady: doneCount,
+      libsNeeded: myDeps.length,
+      deployState: tasks[`deploy:${app}`].state,
+    };
+  });
+
+  return {
+    ...counts,
+    total: Object.keys(tasks).length,
+    complete: isComplete(),
+    libs: byType.libs,
+    apps: byType.apps,
+    deploys: byType.deploys,
+    appStatus,
+  };
 }
 
 function getAnalysis() {
@@ -368,12 +424,15 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\nCoordinator listening on http://localhost:${PORT}`);
-  console.log(`Tasks: ${libs.length} libs + ${apps.length} apps + ${apps.length} deploys = ${Object.keys(tasks).length} total`);
-  console.log(`Apps start building as soon as their lib deps are ready:`);
+  console.log(`\n${'='.repeat(60)}`);
+  console.log(`Coordinator listening on http://localhost:${PORT}`);
+  console.log(`${'='.repeat(60)}`);
+  console.log(`\nPipeline: ${libs.length} libs → ${apps.length} apps → ${apps.length} deploys = ${Object.keys(tasks).length} tasks total`);
+  console.log(`\nApps start building as soon as their lib deps are ready:`);
   for (const app of apps) {
     console.log(`  ${app}: needs ${appDeps[app].length} libs`);
   }
   const status = getStatus();
-  console.log(`Ready: ${status.ready}, Pending: ${status.pending}`);
+  console.log(`\nReady to build: ${status.ready} libs | Pending: ${status.pending}`);
+  console.log(`${'='.repeat(60)}\n`);
 });
