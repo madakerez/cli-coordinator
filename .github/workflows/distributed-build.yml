@@ -14,8 +14,9 @@ env:
   NX_KEY: ${{ secrets.NX_KEY }}
 
 jobs:
-  # ─── Coordinator: analyzes deps, serves task queue via ngrok ───
+  # ─── Coordinator: analyzes NX dep graph, distributes lib tasks to agents via ngrok ───
   coordinator:
+    name: "Coordinator — task queue + ngrok tunnel"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +60,7 @@ jobs:
           name: tunnel-url
           path: /tmp/tunnel/url.txt
 
-      - name: Wait for all libs to be built
+      - name: Monitor lib build progress
         run: |
           while true; do
             STATUS=$(curl -sf http://localhost:8765/status)
@@ -79,8 +80,9 @@ jobs:
           done
         timeout-minutes: 30
 
-  # ─── Agents: distributed lib builders ───
+  # ─── Agents: poll coordinator for tasks, build libs, push cache to MinIO ───
   agents:
+    name: "Lib builder — agent ${{ matrix.agent }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -114,14 +116,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Build libs
+      - name: Build assigned libs
         run: npx tsx scripts/agent.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
 
-  # ─── App builds: poll coordinator, start ASAP when their libs ready ───
+  # ─── App builds: poll coordinator, start ASAP when their libs are cached in MinIO ───
   build-app1:
-    name: "Build app1 (18 libs)"
+    name: "App build — app1 (18 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +147,7 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for app1 libs
+      - name: Wait for libs to be cached
         run: |
           echo "Polling coordinator for app1 readiness..."
           while true; do
@@ -153,21 +155,21 @@ jobs:
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
-            echo "$(date +%H:%M:%S) app1: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then echo "✅ All libs for app1 are built!"; break; fi
+            echo "$(date +%H:%M:%S) app1: ${LIBS_READY}/${LIBS_NEEDED} libs cached"
+            if [ "$READY" = "true" ]; then echo "All libs cached — starting build"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-      - name: Build app1
+      - name: Build app1 (libs from remote cache)
         run: npx nx build app1
-      - name: Upload build
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-app1
           path: dist/apps/app1
 
   build-app2:
-    name: "Build app2 (4 libs)"
+    name: "App build — app2 (4 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -191,7 +193,7 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for app2 libs
+      - name: Wait for libs to be cached
         run: |
           echo "Polling coordinator for app2 readiness..."
           while true; do
@@ -199,21 +201,21 @@ jobs:
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
-            echo "$(date +%H:%M:%S) app2: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then echo "✅ All libs for app2 are built!"; break; fi
+            echo "$(date +%H:%M:%S) app2: ${LIBS_READY}/${LIBS_NEEDED} libs cached"
+            if [ "$READY" = "true" ]; then echo "All libs cached — starting build"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-      - name: Build app2
+      - name: Build app2 (libs from remote cache)
         run: npx nx build app2
-      - name: Upload build
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-app2
           path: dist/apps/app2
 
   build-app3:
-    name: "Build app3 (16 libs)"
+    name: "App build — app3 (16 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -237,7 +239,7 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for app3 libs
+      - name: Wait for libs to be cached
         run: |
           echo "Polling coordinator for app3 readiness..."
           while true; do
@@ -245,21 +247,21 @@ jobs:
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
-            echo "$(date +%H:%M:%S) app3: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then echo "✅ All libs for app3 are built!"; break; fi
+            echo "$(date +%H:%M:%S) app3: ${LIBS_READY}/${LIBS_NEEDED} libs cached"
+            if [ "$READY" = "true" ]; then echo "All libs cached — starting build"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-      - name: Build app3
+      - name: Build app3 (libs from remote cache)
         run: npx nx build app3
-      - name: Upload build
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-app3
           path: dist/apps/app3
 
   build-app4:
-    name: "Build app4 (23 libs)"
+    name: "App build — app4 (23 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -283,7 +285,7 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for app4 libs
+      - name: Wait for libs to be cached
         run: |
           echo "Polling coordinator for app4 readiness..."
           while true; do
@@ -291,22 +293,22 @@ jobs:
             READY=$(echo "$STATUS" | jq -r '.ready')
             LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
             LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
-            echo "$(date +%H:%M:%S) app4: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
-            if [ "$READY" = "true" ]; then echo "✅ All libs for app4 are built!"; break; fi
+            echo "$(date +%H:%M:%S) app4: ${LIBS_READY}/${LIBS_NEEDED} libs cached"
+            if [ "$READY" = "true" ]; then echo "All libs cached — starting build"; break; fi
             sleep 5
           done
         timeout-minutes: 30
-      - name: Build app4
+      - name: Build app4 (libs from remote cache)
         run: npx nx build app4
-      - name: Upload build
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-app4
           path: dist/apps/app4
 
-  # ─── Deploys: separate tile per app ───
+  # ─── Deploys: one tile per app, starts as soon as its build is done ───
   deploy-app1:
-    name: "Deploy app1"
+    name: "Deploy — app1"
     needs: [build-app1]
     runs-on: ubuntu-latest
     steps:
@@ -314,16 +316,16 @@ jobs:
         with:
           name: build-app1
           path: dist/
-      - name: Deploy
+      - name: Deploy to production
         run: |
           echo "=== Deploying app1 ==="
           ls -la dist/
           echo "Uploading to https://app1.example.com..."
           sleep 2
-          echo "✅ app1 deployed successfully!"
+          echo "app1 deployed successfully"
 
   deploy-app2:
-    name: "Deploy app2"
+    name: "Deploy — app2"
     needs: [build-app2]
     runs-on: ubuntu-latest
     steps:
@@ -331,16 +333,16 @@ jobs:
         with:
           name: build-app2
           path: dist/
-      - name: Deploy
+      - name: Deploy to production
         run: |
           echo "=== Deploying app2 ==="
           ls -la dist/
           echo "Uploading to https://app2.example.com..."
           sleep 2
-          echo "✅ app2 deployed successfully!"
+          echo "app2 deployed successfully"
 
   deploy-app3:
-    name: "Deploy app3"
+    name: "Deploy — app3"
     needs: [build-app3]
     runs-on: ubuntu-latest
     steps:
@@ -348,16 +350,16 @@ jobs:
         with:
           name: build-app3
           path: dist/
-      - name: Deploy
+      - name: Deploy to production
         run: |
           echo "=== Deploying app3 ==="
           ls -la dist/
           echo "Uploading to https://app3.example.com..."
           sleep 2
-          echo "✅ app3 deployed successfully!"
+          echo "app3 deployed successfully"
 
   deploy-app4:
-    name: "Deploy app4"
+    name: "Deploy — app4"
     needs: [build-app4]
     runs-on: ubuntu-latest
     steps:
@@ -365,10 +367,10 @@ jobs:
         with:
           name: build-app4
           path: dist/
-      - name: Deploy
+      - name: Deploy to production
         run: |
           echo "=== Deploying app4 ==="
           ls -la dist/
           echo "Uploading to https://app4.example.com..."
           sleep 2
-          echo "✅ app4 deployed successfully!"
+          echo "app4 deployed successfully"
