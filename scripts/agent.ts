@@ -1,10 +1,24 @@
 import { execSync } from 'child_process';
 import { join } from 'path';
+import { readdirSync, existsSync } from 'fs';
 
 const COORDINATOR_URL = process.env.COORDINATOR_URL || 'http://localhost:8765';
 const AGENT_ID = process.env.AGENT_ID || `agent-${process.pid}`;
 const ROOT = join(__dirname, '..');
 const POLL_INTERVAL = 2000;
+
+// Track known NX cache entries so we upload only new ones per lib
+let knownCacheEntries = new Set<string>();
+function snapshotCacheEntries(): Set<string> {
+  const cacheDir = join(ROOT, '.nx', 'cache');
+  if (!existsSync(cacheDir)) return new Set();
+  return new Set(readdirSync(cacheDir));
+}
+function getNewCacheEntries(): string[] {
+  const current = snapshotCacheEntries();
+  const newEntries = [...current].filter((e) => !knownCacheEntries.has(e) && e !== 'run.json' && e !== 'terminalOutputs');
+  return newEntries;
+}
 
 async function fetchJSON(url: string, options?: RequestInit, retries = 5): Promise<any> {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -38,8 +52,10 @@ async function reportDone(task: string, success: boolean) {
 
 function buildLib(taskName: string): boolean {
   console.log(`[${AGENT_ID}] Building lib: ${taskName}`);
+  // Snapshot cache entries before build
+  knownCacheEntries = snapshotCacheEntries();
   try {
-    execSync(`npx nx run ${taskName}:build --skip-nx-cache`, {
+    execSync(`npx nx run ${taskName}:build`, {
       cwd: ROOT,
       stdio: 'inherit',
       env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
@@ -49,6 +65,51 @@ function buildLib(taskName: string): boolean {
   } catch (e) {
     console.error(`[${AGENT_ID}] FAILED: ${taskName}`, (e as Error).message);
     return false;
+  }
+}
+
+async function uploadLibOutput(taskName: string) {
+  // Tar new NX cache entries for this lib (contains the actual build output)
+  const newCacheEntries = getNewCacheEntries();
+
+  // Build the list of paths to tar (NX cache entries contain the build output)
+  const paths: string[] = [];
+  for (const entry of newCacheEntries) {
+    const entryPath = join(ROOT, '.nx', 'cache', entry);
+    if (existsSync(entryPath)) paths.push(`.nx/cache/${entry}`);
+  }
+
+  // Also include terminal output files for cache entries
+  for (const entry of newCacheEntries) {
+    const termPath = `.nx/cache/terminalOutputs/${entry}`;
+    if (existsSync(join(ROOT, termPath))) paths.push(termPath);
+  }
+
+  if (paths.length === 0) {
+    console.log(`[${AGENT_ID}] No output to upload for ${taskName}`);
+    return;
+  }
+
+  try {
+    // Create tar.gz of dist + cache entries
+    const tarCmd = `tar czf /tmp/lib-${taskName}.tar.gz ${paths.join(' ')}`;
+    execSync(tarCmd, { cwd: ROOT, stdio: 'pipe' });
+
+    // Read and POST to coordinator
+    const tarData = require('fs').readFileSync(`/tmp/lib-${taskName}.tar.gz`);
+    const res = await fetch(`${COORDINATOR_URL}/upload-lib?name=${taskName}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: tarData,
+    });
+    const result = await res.json();
+    const sizeKB = (tarData.length / 1024).toFixed(1);
+    console.log(`[${AGENT_ID}] Uploaded ${taskName} output (${sizeKB} KB, ${paths.length} paths)`);
+
+    // Update known entries
+    knownCacheEntries = snapshotCacheEntries();
+  } catch (e) {
+    console.error(`[${AGENT_ID}] Upload failed for ${taskName}:`, (e as Error).message);
   }
 }
 
@@ -78,6 +139,7 @@ async function main() {
     if (task) {
       console.log(`[${AGENT_ID}] Assigned: ${task}`);
       const success = buildLib(task);
+      if (success) await uploadLibOutput(task);
       await reportDone(task, success);
     } else if (done) {
       console.log(`[${AGENT_ID}] All libs built. Exiting.`);

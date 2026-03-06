@@ -2,6 +2,7 @@ import * as http from 'http';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import * as zlib from 'zlib';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const ROOT = join(__dirname, '..');
@@ -99,6 +100,9 @@ const tasks: Record<string, Task> = {};
 const timeline: TimelineEntry[] = [];
 const globalStart = Date.now();
 const appReadyLogged = new Set<string>();
+
+// Store built lib outputs (tar.gz buffers) keyed by lib name
+const libOutputs: Record<string, Buffer> = {};
 
 // Create lib tasks only — apps are built by separate GHA jobs
 for (const name of libs) {
@@ -418,6 +422,72 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname === '/timeline') {
     res.setHeader('Content-Type', 'text/plain');
     res.end(renderTimeline());
+    return;
+  }
+
+  // Agent uploads built lib output (tar.gz of dist + .nx/cache for this lib)
+  if (req.method === 'POST' && url.pathname === '/upload-lib') {
+    const libName = url.searchParams.get('name');
+    if (!libName) {
+      res.statusCode = 400;
+      res.end(JSON.stringify({ error: 'Missing ?name= parameter' }));
+      return;
+    }
+    const chunks: Buffer[] = [];
+    req.on('data', (chunk: Buffer) => chunks.push(chunk));
+    req.on('end', () => {
+      libOutputs[libName] = Buffer.concat(chunks);
+      const sizeKB = (libOutputs[libName].length / 1024).toFixed(1);
+      console.log(`[${elapsed()}] 📤 Received lib output: ${libName} (${sizeKB} KB)`);
+      res.end(JSON.stringify({ ok: true, size: libOutputs[libName].length }));
+    });
+    return;
+  }
+
+  // App job downloads all built lib outputs it needs (combined tar.gz)
+  if (req.method === 'GET' && url.pathname === '/download-libs') {
+    const appName = url.searchParams.get('app');
+    if (!appName) {
+      res.statusCode = 400;
+      res.end(JSON.stringify({ error: 'Missing ?app= parameter' }));
+      return;
+    }
+    const myDeps = appDeps[appName];
+    if (!myDeps) {
+      res.statusCode = 404;
+      res.end(JSON.stringify({ error: `Unknown app: ${appName}` }));
+      return;
+    }
+
+    const available = myDeps.filter((d) => libOutputs[d]);
+    const missing = myDeps.filter((d) => !libOutputs[d]);
+    console.log(`[${elapsed()}] 📥 ${appName} downloading libs: ${available.length}/${myDeps.length} available${missing.length > 0 ? ` (missing: ${missing.join(', ')})` : ''}`);
+
+    // Concatenate individual tar.gz streams using a wrapper tar
+    // Each lib output is already a tar.gz — we'll send a simple manifest + binary blobs
+    const manifest = {
+      app: appName,
+      libs: available.map((name) => ({ name, size: libOutputs[name].length })),
+      missing,
+    };
+    const manifestBuf = Buffer.from(JSON.stringify(manifest) + '\n');
+    // Protocol: 4 bytes manifest length (LE) + manifest JSON + for each lib: 4 bytes name length + name + 4 bytes data length + data
+    const parts: Buffer[] = [];
+    const manifestLen = Buffer.alloc(4);
+    manifestLen.writeUInt32LE(manifestBuf.length);
+    parts.push(manifestLen, manifestBuf);
+
+    for (const name of available) {
+      const nameBuf = Buffer.from(name);
+      const nameLen = Buffer.alloc(4);
+      nameLen.writeUInt32LE(nameBuf.length);
+      const dataLen = Buffer.alloc(4);
+      dataLen.writeUInt32LE(libOutputs[name].length);
+      parts.push(nameLen, nameBuf, dataLen, libOutputs[name]);
+    }
+
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.end(Buffer.concat(parts));
     return;
   }
 

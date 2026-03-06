@@ -155,6 +155,8 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
+      - name: Download pre-built libs from coordinator
+        run: bash scripts/download-libs.sh app1
       - name: Build app1
         run: npx nx build app1
       - name: Upload build
@@ -201,6 +203,8 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
+      - name: Download pre-built libs from coordinator
+        run: bash scripts/download-libs.sh app2
       - name: Build app2
         run: npx nx build app2
       - name: Upload build
@@ -247,6 +251,8 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
+      - name: Download pre-built libs from coordinator
+        run: bash scripts/download-libs.sh app3
       - name: Build app3
         run: npx nx build app3
       - name: Upload build
@@ -293,6 +299,8 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
+      - name: Download pre-built libs from coordinator
+        run: bash scripts/download-libs.sh app4
       - name: Build app4
         run: npx nx build app4
       - name: Upload build
