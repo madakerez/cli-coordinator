@@ -16,7 +16,7 @@ env:
 jobs:
   # ─── Coordinator: analyzes NX dep graph, distributes lib tasks to agents via ngrok ───
   coordinator:
-    name: "🧠 Coordinator"
+    name: "Coordinator"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -99,7 +99,7 @@ jobs:
 
   # ─── Agents: poll coordinator for tasks, build libs, push cache to MinIO ───
   agents:
-    name: "🔨 Agent ${{ matrix.agent }}"
+    name: "Agent ${{ matrix.agent }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -142,7 +142,7 @@ jobs:
 
   # ─── App builds: poll coordinator, start ASAP when their libs are cached in MinIO ───
   build-app1:
-    name: "🚀 Build app1"
+    name: "Build app1"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -209,7 +209,7 @@ jobs:
           path: dist/apps/app1
 
   build-app2:
-    name: "🚀 Build app2"
+    name: "Build app2"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -276,7 +276,7 @@ jobs:
           path: dist/apps/app2
 
   build-app3:
-    name: "🚀 Build app3"
+    name: "Build app3"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -343,7 +343,7 @@ jobs:
           path: dist/apps/app3
 
   build-app4:
-    name: "🚀 Build app4"
+    name: "Build app4"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -411,7 +411,7 @@ jobs:
 
   # ─── Deploys: one tile per app, starts as soon as its build is done ───
   deploy-app1:
-    name: "🌍 Deploy app1"
+    name: "Deploy app1"
     needs: [build-app1]
     runs-on: ubuntu-latest
     steps:
@@ -427,7 +427,7 @@ jobs:
           echo "✅ app1 live!"
 
   deploy-app2:
-    name: "🌍 Deploy app2"
+    name: "Deploy app2"
     needs: [build-app2]
     runs-on: ubuntu-latest
     steps:
@@ -443,7 +443,7 @@ jobs:
           echo "✅ app2 live!"
 
   deploy-app3:
-    name: "🌍 Deploy app3"
+    name: "Deploy app3"
     needs: [build-app3]
     runs-on: ubuntu-latest
     steps:
@@ -459,7 +459,7 @@ jobs:
           echo "✅ app3 live!"
 
   deploy-app4:
-    name: "🌍 Deploy app4"
+    name: "Deploy app4"
     needs: [build-app4]
     runs-on: ubuntu-latest
     steps:
