@@ -7,12 +7,12 @@ permissions:
   contents: read
 
 env:
+  NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
   NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
 
 jobs:
-  # ─── Build all libs: coordinator + local agents on one runner ───
-  build-libs:
-    name: "Build libs (coordinator + 4 agents)"
+  # ─── Coordinator: analyzes deps, serves task queue via ngrok ───
+  coordinator:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,23 +21,104 @@ jobs:
           node-version: 20
       - run: npm ci
 
-      - name: Build all 51 libs
-        run: npx tsx scripts/test-local.ts
-        env:
-          NUM_AGENTS: '4'
+      - name: Install ngrok
+        run: |
+          curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz \
+            | sudo tar xz -C /usr/local/bin
+          ngrok config add-authtoken "$NGROK_AUTHTOKEN"
 
-      - name: Upload built libs + NX cache
+      - name: Start coordinator
+        run: npx tsx scripts/coordinator.ts &
+
+      - name: Wait for coordinator health
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8765/health && break || sleep 1
+          done
+
+      - name: Start ngrok tunnel
+        run: |
+          ngrok http 8765 --log=stdout &
+          sleep 5
+          for i in $(seq 1 10); do
+            URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url // empty')
+            if [ -n "$URL" ]; then break; fi
+            sleep 2
+          done
+          if [ -z "$URL" ]; then echo "ERROR: ngrok tunnel failed"; exit 1; fi
+          echo "Tunnel URL: $URL"
+          mkdir -p /tmp/tunnel
+          echo "$URL" > /tmp/tunnel/url.txt
+
+      - name: Upload tunnel URL
         uses: actions/upload-artifact@v4
         with:
-          name: libs-dist
-          path: |
-            dist/
-            .nx/cache/
+          name: tunnel-url
+          path: /tmp/tunnel/url.txt
 
-  # ─── App builds: download pre-built libs, build app only ───
+      - name: Wait for all libs to be built
+        run: |
+          while true; do
+            STATUS=$(curl -sf http://localhost:8765/status)
+            DONE=$(echo "$STATUS" | jq -r '.done')
+            TOTAL=$(echo "$STATUS" | jq -r '.total')
+            RUNNING=$(echo "$STATUS" | jq -r '.running')
+            ALL_DONE=$(echo "$STATUS" | jq -r '.allLibsDone')
+            echo "$(date +%H:%M:%S) | libs: ${DONE}/${TOTAL} done | running: ${RUNNING}"
+            echo "$STATUS" | jq -r '.appStatus[] | "  \(.name): \(.libsReady)/\(.libsNeeded) libs \(if .ready then "✅ READY" else "⏳" end)"'
+            if [ "$ALL_DONE" = "true" ]; then
+              echo ""
+              echo "=== ALL LIBS BUILT ==="
+              curl -sf http://localhost:8765/timeline
+              break
+            fi
+            sleep 10
+          done
+        timeout-minutes: 30
+
+  # ─── Agents: distributed lib builders ───
+  agents:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      - name: Get coordinator URL
+        run: |
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              echo "Found artifact ID: $ARTIFACT_ID"
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
+              break
+            fi
+            echo "Waiting for coordinator... ($i/60)"
+            sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
+          echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
+          echo "Coordinator: $(cat /tmp/tunnel/url.txt)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Build libs
+        run: npx tsx scripts/agent.ts
+        env:
+          AGENT_ID: agent-${{ matrix.agent }}
+
+  # ─── App builds: poll coordinator, start ASAP when their libs ready ───
   build-app1:
-    name: "Build app1"
-    needs: [build-libs]
+    name: "Build app1 (18 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,10 +126,35 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Download pre-built libs + NX cache
-        uses: actions/download-artifact@v4
-        with:
-          name: libs-dist
+      - name: Get coordinator URL
+        run: |
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
+            fi
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
+          echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Wait for app1 libs
+        run: |
+          echo "Polling coordinator for app1 readiness..."
+          while true; do
+            STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app1" 2>/dev/null) || { sleep 5; continue; }
+            READY=$(echo "$STATUS" | jq -r '.ready')
+            LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
+            LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
+            echo "$(date +%H:%M:%S) app1: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app1 are built!"; break; fi
+            sleep 5
+          done
+        timeout-minutes: 30
       - name: Build app1
         run: npx nx build app1
       - name: Upload build
@@ -58,8 +164,7 @@ jobs:
           path: dist/apps/app1
 
   build-app2:
-    name: "Build app2"
-    needs: [build-libs]
+    name: "Build app2 (4 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,10 +172,35 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Download pre-built libs + NX cache
-        uses: actions/download-artifact@v4
-        with:
-          name: libs-dist
+      - name: Get coordinator URL
+        run: |
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
+            fi
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
+          echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Wait for app2 libs
+        run: |
+          echo "Polling coordinator for app2 readiness..."
+          while true; do
+            STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app2" 2>/dev/null) || { sleep 5; continue; }
+            READY=$(echo "$STATUS" | jq -r '.ready')
+            LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
+            LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
+            echo "$(date +%H:%M:%S) app2: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app2 are built!"; break; fi
+            sleep 5
+          done
+        timeout-minutes: 30
       - name: Build app2
         run: npx nx build app2
       - name: Upload build
@@ -80,8 +210,7 @@ jobs:
           path: dist/apps/app2
 
   build-app3:
-    name: "Build app3"
-    needs: [build-libs]
+    name: "Build app3 (16 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -89,10 +218,35 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Download pre-built libs + NX cache
-        uses: actions/download-artifact@v4
-        with:
-          name: libs-dist
+      - name: Get coordinator URL
+        run: |
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
+            fi
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
+          echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Wait for app3 libs
+        run: |
+          echo "Polling coordinator for app3 readiness..."
+          while true; do
+            STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app3" 2>/dev/null) || { sleep 5; continue; }
+            READY=$(echo "$STATUS" | jq -r '.ready')
+            LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
+            LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
+            echo "$(date +%H:%M:%S) app3: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app3 are built!"; break; fi
+            sleep 5
+          done
+        timeout-minutes: 30
       - name: Build app3
         run: npx nx build app3
       - name: Upload build
@@ -102,8 +256,7 @@ jobs:
           path: dist/apps/app3
 
   build-app4:
-    name: "Build app4"
-    needs: [build-libs]
+    name: "Build app4 (23 libs)"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,10 +264,35 @@ jobs:
         with:
           node-version: 20
       - run: npm ci
-      - name: Download pre-built libs + NX cache
-        uses: actions/download-artifact@v4
-        with:
-          name: libs-dist
+      - name: Get coordinator URL
+        run: |
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel; break
+            fi
+            echo "Waiting for coordinator... ($i/60)"; sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "ERROR: no tunnel URL"; exit 1; fi
+          echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Wait for app4 libs
+        run: |
+          echo "Polling coordinator for app4 readiness..."
+          while true; do
+            STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app4" 2>/dev/null) || { sleep 5; continue; }
+            READY=$(echo "$STATUS" | jq -r '.ready')
+            LIBS_READY=$(echo "$STATUS" | jq -r '.libsReady')
+            LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded')
+            echo "$(date +%H:%M:%S) app4: ${LIBS_READY}/${LIBS_NEEDED} libs ready"
+            if [ "$READY" = "true" ]; then echo "✅ All libs for app4 are built!"; break; fi
+            sleep 5
+          done
+        timeout-minutes: 30
       - name: Build app4
         run: npx nx build app4
       - name: Upload build
@@ -129,8 +307,7 @@ jobs:
     needs: [build-app1]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-app1
           path: dist/
@@ -147,8 +324,7 @@ jobs:
     needs: [build-app2]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-app2
           path: dist/
@@ -165,8 +341,7 @@ jobs:
     needs: [build-app3]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-app3
           path: dist/
@@ -183,8 +358,7 @@ jobs:
     needs: [build-app4]
     runs-on: ubuntu-latest
     steps:
-      - name: Download build
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: build-app4
           path: dist/
