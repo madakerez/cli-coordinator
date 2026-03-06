@@ -64,6 +64,7 @@ jobs:
     # No needs - starts in parallel with coordinator
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         agent: [1, 2, 3, 4]
     steps:
@@ -78,8 +79,15 @@ jobs:
       - name: Wait for coordinator
         run: |
           for i in $(seq 1 60); do
-            # Try downloading the tunnel URL artifact
-            gh run download ${{ github.run_id }} --name tunnel-url -D /tmp/tunnel 2>/dev/null && break || true
+            # Use GitHub API to find artifact from in-progress run
+            ARTIFACT_URL=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[] | select(.name=="tunnel-url") | .archive_download_url' 2>/dev/null) || true
+            if [ -n "$ARTIFACT_URL" ]; then
+              curl -sL -H "Authorization: Bearer ${{ github.token }}" "$ARTIFACT_URL" -o /tmp/tunnel.zip
+              mkdir -p /tmp/tunnel
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
+              break
+            fi
             echo "Waiting for coordinator... ($i/60)"
             sleep 5
           done
