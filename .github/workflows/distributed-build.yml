@@ -1,0 +1,100 @@
+name: Distributed Build
+
+on: [push]
+
+env:
+  NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+
+jobs:
+  coordinator:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      # Install ngrok
+      - name: Install ngrok
+        run: |
+          curl -sSL https://ngrok-agent.s3.amazonaws.com/ngrok-v3-stable-linux-amd64.tgz \
+            | tar xz -C /usr/local/bin
+
+      # Start coordinator in background
+      - name: Start coordinator
+        run: npx tsx scripts/coordinator.ts &
+        env:
+          NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
+
+      # Start ngrok tunnel and save URL as artifact
+      - name: Start tunnel
+        run: |
+          ngrok http 8765 --log=stdout &
+          sleep 5
+          URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
+          echo "Tunnel URL: $URL"
+          mkdir -p /tmp/tunnel
+          echo "$URL" > /tmp/tunnel/url.txt
+
+      - name: Upload tunnel URL
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-url
+          path: /tmp/tunnel/url.txt
+
+      # Wait for all tasks to complete
+      - name: Wait for completion
+        run: |
+          while true; do
+            STATUS=$(curl -sf http://localhost:8765/status)
+            echo "$(date +%H:%M:%S) $STATUS"
+            REMAINING=$(echo "$STATUS" | jq '.pending + .ready + .running')
+            if [ "$REMAINING" = "0" ]; then
+              echo "All tasks done!"
+              curl -sf http://localhost:8765/timeline
+              break
+            fi
+            sleep 10
+          done
+        timeout-minutes: 30
+
+  agents:
+    # No needs - starts in parallel with coordinator
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        agent: [1, 2, 3, 4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      # Wait for tunnel URL artifact from coordinator
+      - name: Wait for coordinator
+        run: |
+          for i in $(seq 1 60); do
+            # Try downloading the tunnel URL artifact
+            gh run download ${{ github.run_id }} --name tunnel-url -D /tmp/tunnel 2>/dev/null && break || true
+            echo "Waiting for coordinator... ($i/60)"
+            sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then
+            echo "ERROR: Could not get coordinator URL"
+            exit 1
+          fi
+          URL=$(cat /tmp/tunnel/url.txt)
+          echo "COORDINATOR_URL=$URL" >> $GITHUB_ENV
+          echo "Coordinator URL: $URL"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Run agent
+        run: npx tsx scripts/agent.ts
+        env:
+          AGENT_ID: agent-${{ matrix.agent }}
+          NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'

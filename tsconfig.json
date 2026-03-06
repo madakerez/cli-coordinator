@@ -1,0 +1,160 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./libs/shared-config"
+    },
+    {
+      "path": "./libs/shared-models"
+    },
+    {
+      "path": "./libs/shared-utils"
+    },
+    {
+      "path": "./libs/shared-ui"
+    },
+    {
+      "path": "./libs/shared-auth"
+    },
+    {
+      "path": "./libs/shared-http"
+    },
+    {
+      "path": "./libs/shared-logging"
+    },
+    {
+      "path": "./libs/shared-testing"
+    },
+    {
+      "path": "./libs/app1-data-access"
+    },
+    {
+      "path": "./libs/app1-feature-home"
+    },
+    {
+      "path": "./libs/app1-feature-profile"
+    },
+    {
+      "path": "./libs/app1-feature-settings"
+    },
+    {
+      "path": "./libs/app1-feature-dashboard"
+    },
+    {
+      "path": "./libs/app1-feature-notifications"
+    },
+    {
+      "path": "./libs/app1-ui-components"
+    },
+    {
+      "path": "./libs/app1-ui-layout"
+    },
+    {
+      "path": "./libs/app1-ui-forms"
+    },
+    {
+      "path": "./libs/app1-util-validators"
+    },
+    {
+      "path": "./libs/app1-util-formatters"
+    },
+    {
+      "path": "./libs/app2-data-access"
+    },
+    {
+      "path": "./libs/app2-feature-home"
+    },
+    {
+      "path": "./libs/app2-feature-search"
+    },
+    {
+      "path": "./libs/app2-feature-detail"
+    },
+    {
+      "path": "./libs/app2-feature-favorites"
+    },
+    {
+      "path": "./libs/app2-feature-analytics"
+    },
+    {
+      "path": "./libs/app2-ui-components"
+    },
+    {
+      "path": "./libs/app2-ui-layout"
+    },
+    {
+      "path": "./libs/app2-ui-charts"
+    },
+    {
+      "path": "./libs/app2-util-validators"
+    },
+    {
+      "path": "./libs/app2-util-transforms"
+    },
+    {
+      "path": "./libs/app3-data-access"
+    },
+    {
+      "path": "./libs/app3-feature-home"
+    },
+    {
+      "path": "./libs/app3-feature-editor"
+    },
+    {
+      "path": "./libs/app3-feature-preview"
+    },
+    {
+      "path": "./libs/app3-feature-history"
+    },
+    {
+      "path": "./libs/app3-feature-collaboration"
+    },
+    {
+      "path": "./libs/app3-ui-components"
+    },
+    {
+      "path": "./libs/app3-ui-layout"
+    },
+    {
+      "path": "./libs/app3-ui-toolbar"
+    },
+    {
+      "path": "./libs/app3-util-validators"
+    },
+    {
+      "path": "./libs/app4-data-access"
+    },
+    {
+      "path": "./libs/app4-feature-home"
+    },
+    {
+      "path": "./libs/app4-feature-reports"
+    },
+    {
+      "path": "./libs/app4-feature-admin"
+    },
+    {
+      "path": "./libs/app4-feature-monitoring"
+    },
+    {
+      "path": "./libs/app4-feature-export"
+    },
+    {
+      "path": "./libs/app4-ui-components"
+    },
+    {
+      "path": "./libs/app4-ui-layout"
+    },
+    {
+      "path": "./libs/app4-ui-charts"
+    },
+    {
+      "path": "./libs/app4-util-validators"
+    },
+    {
+      "path": "./libs/app4-util-parsers"
+    }
+  ]
+}
