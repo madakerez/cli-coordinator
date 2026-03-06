@@ -1,5 +1,11 @@
 // Dependency map: defines which libs depend on which other libs,
 // and which apps depend on which libs.
+//
+// Designed so each app has a DIFFERENT number of dependencies:
+//   app2: lightweight  (4 libs)  — starts building first
+//   app3: medium       (15 libs) — starts mid-way
+//   app1: heavy        (19 libs) — starts later
+//   app4: heaviest     (25 libs) — starts last (depends on libs from app1/app2 too)
 
 export const sharedLibs = [
   'shared-config',
@@ -87,7 +93,7 @@ export const libDeps: Record<string, string[]> = {
   'shared-logging': ['shared-config'],
   'shared-testing': ['shared-utils'],
 
-  // App1 libs
+  // App1 libs — depend on many shared libs
   'app1-data-access': ['shared-http', 'shared-models'],
   'app1-feature-home': ['app1-data-access', 'shared-ui'],
   'app1-feature-profile': ['app1-data-access', 'shared-auth'],
@@ -100,20 +106,21 @@ export const libDeps: Record<string, string[]> = {
   'app1-util-validators': ['shared-utils'],
   'app1-util-formatters': ['shared-utils'],
 
-  // App2 libs
-  'app2-data-access': ['shared-http', 'shared-models'],
-  'app2-feature-home': ['app2-data-access', 'shared-ui'],
-  'app2-feature-search': ['app2-data-access', 'shared-ui'],
-  'app2-feature-detail': ['app2-data-access', 'shared-ui'],
-  'app2-feature-favorites': ['app2-data-access', 'shared-auth'],
+  // App2 libs — MINIMAL shared deps, mostly self-contained
+  // Only shared-config is needed, NO shared-http, NO shared-auth, NO shared-ui
+  'app2-data-access': ['shared-config'],
+  'app2-feature-home': ['app2-data-access'],
+  'app2-feature-search': ['app2-data-access'],
+  'app2-feature-detail': ['app2-data-access'],
+  'app2-feature-favorites': ['app2-data-access'],
   'app2-feature-analytics': ['app2-data-access', 'app2-ui-charts'],
-  'app2-ui-components': ['shared-ui'],
-  'app2-ui-layout': ['shared-ui', 'app2-ui-components'],
-  'app2-ui-charts': ['shared-ui', 'shared-utils'],
-  'app2-util-validators': ['shared-utils'],
-  'app2-util-transforms': ['shared-utils', 'shared-models'],
+  'app2-ui-components': [],
+  'app2-ui-layout': ['app2-ui-components'],
+  'app2-ui-charts': ['app2-ui-components'],
+  'app2-util-validators': ['shared-config'],
+  'app2-util-transforms': ['shared-config'],
 
-  // App3 libs
+  // App3 libs — moderate shared deps
   'app3-data-access': ['shared-http', 'shared-models'],
   'app3-feature-home': ['app3-data-access', 'shared-ui'],
   'app3-feature-editor': ['app3-data-access', 'shared-ui', 'app3-ui-toolbar'],
@@ -125,13 +132,13 @@ export const libDeps: Record<string, string[]> = {
   'app3-ui-toolbar': ['shared-ui', 'app3-ui-components'],
   'app3-util-validators': ['shared-utils'],
 
-  // App4 libs
-  'app4-data-access': ['shared-http', 'shared-models'],
+  // App4 libs — HEAVY, depends on shared + cross-app libs from app1 and app2
+  'app4-data-access': ['shared-http', 'shared-models', 'shared-logging'],
   'app4-feature-home': ['app4-data-access', 'shared-ui'],
-  'app4-feature-reports': ['app4-data-access', 'app4-ui-charts'],
-  'app4-feature-admin': ['app4-data-access', 'shared-auth'],
-  'app4-feature-monitoring': ['app4-data-access', 'app4-ui-charts', 'shared-logging'],
-  'app4-feature-export': ['app4-data-access', 'app4-util-parsers'],
+  'app4-feature-reports': ['app4-data-access', 'app4-ui-charts', 'app1-data-access'],
+  'app4-feature-admin': ['app4-data-access', 'shared-auth', 'app1-util-validators'],
+  'app4-feature-monitoring': ['app4-data-access', 'app4-ui-charts', 'shared-logging', 'app2-ui-charts'],
+  'app4-feature-export': ['app4-data-access', 'app4-util-parsers', 'app1-util-formatters'],
   'app4-ui-components': ['shared-ui'],
   'app4-ui-layout': ['shared-ui', 'app4-ui-components'],
   'app4-ui-charts': ['shared-ui', 'shared-utils'],
@@ -139,26 +146,33 @@ export const libDeps: Record<string, string[]> = {
   'app4-util-parsers': ['shared-utils', 'shared-models'],
 };
 
-// App-to-lib dependencies (which libs each app imports directly)
+// App-to-lib dependencies (direct imports in each app's main.ts)
+// NX will also detect transitive deps, but these are the explicit imports.
 export const appDeps: Record<string, string[]> = {
+  // app1: heavy — 8 shared + 11 own = 19 libs
   app1: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
     'shared-auth', 'shared-http', 'shared-logging',
     ...app1Libs,
   ],
+  // app2: lightweight — only shared-config + 3 own = 4 direct deps
+  // No shared-http, no shared-auth, no shared-ui — self-contained app
   app2: [
-    'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-auth', 'shared-http', 'shared-logging',
-    ...app2Libs,
+    'shared-config',
+    'app2-data-access',
+    'app2-feature-home',
+    'app2-ui-components',
   ],
+  // app3: medium — 5 shared + 10 own = 15 libs
   app3: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-auth', 'shared-http', 'shared-logging',
+    'shared-http',
     ...app3Libs,
   ],
+  // app4: heaviest — 7 shared + 11 own + cross-app deps resolved transitively = ~25+ libs
   app4: [
     'shared-config', 'shared-models', 'shared-utils', 'shared-ui',
-    'shared-http', 'shared-logging',
+    'shared-auth', 'shared-http', 'shared-logging',
     ...app4Libs,
   ],
 };

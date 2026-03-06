@@ -2,6 +2,7 @@ import '@cli-coordinator/shared-config';
 import '@cli-coordinator/shared-models';
 import '@cli-coordinator/shared-utils';
 import '@cli-coordinator/shared-ui';
+import '@cli-coordinator/shared-auth';
 import '@cli-coordinator/shared-http';
 import '@cli-coordinator/shared-logging';
 import '@cli-coordinator/app4-data-access';

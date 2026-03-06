@@ -1,6 +1,6 @@
-import { sharedUtils } from '@cli-coordinator/shared-utils';
+import { sharedConfig } from '@cli-coordinator/shared-config';
 
 // Re-export dependency references to establish NX dependency graph
 export const app2UtilValidatorsDeps = {
-  sharedUtils,
+  sharedConfig,
 };
