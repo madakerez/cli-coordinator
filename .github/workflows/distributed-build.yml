@@ -9,6 +9,9 @@ permissions:
 env:
   NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
   NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
+  AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+  NX_KEY: ${{ secrets.NX_KEY }}
 
 jobs:
   # ─── Coordinator: analyzes deps, serves task queue via ngrok ───
@@ -155,8 +158,6 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
-      - name: Download pre-built libs from coordinator
-        run: bash scripts/download-libs.sh app1
       - name: Build app1
         run: npx nx build app1
       - name: Upload build
@@ -203,8 +204,6 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
-      - name: Download pre-built libs from coordinator
-        run: bash scripts/download-libs.sh app2
       - name: Build app2
         run: npx nx build app2
       - name: Upload build
@@ -251,8 +250,6 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
-      - name: Download pre-built libs from coordinator
-        run: bash scripts/download-libs.sh app3
       - name: Build app3
         run: npx nx build app3
       - name: Upload build
@@ -299,8 +296,6 @@ jobs:
             sleep 5
           done
         timeout-minutes: 30
-      - name: Download pre-built libs from coordinator
-        run: bash scripts/download-libs.sh app4
       - name: Build app4
         run: npx nx build app4
       - name: Upload build

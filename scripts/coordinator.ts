@@ -2,7 +2,6 @@ import * as http from 'http';
 import { execSync } from 'child_process';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import * as zlib from 'zlib';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const ROOT = join(__dirname, '..');
@@ -100,13 +99,6 @@ const tasks: Record<string, Task> = {};
 const timeline: TimelineEntry[] = [];
 const globalStart = Date.now();
 const appReadyLogged = new Set<string>();
-
-// Store built lib outputs keyed by lib name
-interface LibOutput {
-  tar: Buffer;  // tar.gz of .nx/cache entries
-  meta: Array<{ hash: string; project: string; target: string; code: number; size: number }>;
-}
-const libOutputs: Record<string, LibOutput> = {};
 
 // Create lib tasks only — apps are built by separate GHA jobs
 for (const name of libs) {
@@ -426,73 +418,6 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && url.pathname === '/timeline') {
     res.setHeader('Content-Type', 'text/plain');
     res.end(renderTimeline());
-    return;
-  }
-
-  // Agent uploads built lib output (JSON with base64 tar + DB metadata)
-  if (req.method === 'POST' && url.pathname === '/upload-lib') {
-    const libName = url.searchParams.get('name');
-    if (!libName) {
-      res.statusCode = 400;
-      res.end(JSON.stringify({ error: 'Missing ?name= parameter' }));
-      return;
-    }
-    const chunks: Buffer[] = [];
-    req.on('data', (chunk: Buffer) => chunks.push(chunk));
-    req.on('end', () => {
-      try {
-        const payload = JSON.parse(Buffer.concat(chunks).toString());
-        const tarBuf = Buffer.from(payload.tar, 'base64');
-        libOutputs[libName] = { tar: tarBuf, meta: payload.meta || [] };
-        const sizeKB = (tarBuf.length / 1024).toFixed(1);
-        console.log(`[${elapsed()}] 📤 Received: ${libName} (${sizeKB} KB, ${payload.meta?.length || 0} DB rows)`);
-        res.end(JSON.stringify({ ok: true, size: tarBuf.length }));
-      } catch (e) {
-        res.statusCode = 400;
-        res.end(JSON.stringify({ error: 'Invalid payload' }));
-      }
-    });
-    return;
-  }
-
-  // App job downloads all built lib outputs it needs (JSON with tars + DB metadata)
-  if (req.method === 'GET' && url.pathname === '/download-libs') {
-    const appName = url.searchParams.get('app');
-    if (!appName) {
-      res.statusCode = 400;
-      res.end(JSON.stringify({ error: 'Missing ?app= parameter' }));
-      return;
-    }
-    const myDeps = appDeps[appName];
-    if (!myDeps) {
-      res.statusCode = 404;
-      res.end(JSON.stringify({ error: `Unknown app: ${appName}` }));
-      return;
-    }
-
-    const available = myDeps.filter((d) => libOutputs[d]);
-    const missing = myDeps.filter((d) => !libOutputs[d]);
-    console.log(`[${elapsed()}] 📥 ${appName} downloading libs: ${available.length}/${myDeps.length} available${missing.length > 0 ? ` (missing: ${missing.join(', ')})` : ''}`);
-
-    // Collect all DB metadata rows and tars
-    const allMeta: Array<{ hash: string; project: string; target: string; code: number; size: number }> = [];
-    const libTars: Array<{ name: string; tar: string }> = [];
-    for (const name of available) {
-      const output = libOutputs[name];
-      allMeta.push(...output.meta);
-      libTars.push({ name, tar: output.tar.toString('base64') });
-    }
-
-    const response = {
-      app: appName,
-      available: available.length,
-      missing,
-      meta: allMeta,
-      libs: libTars,
-    };
-
-    res.setHeader('Content-Type', 'application/json');
-    res.end(JSON.stringify(response));
     return;
   }
 
