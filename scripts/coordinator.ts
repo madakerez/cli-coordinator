@@ -5,8 +5,6 @@ import { join } from 'path';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const ROOT = join(__dirname, '..');
-// Coordinator manages lib builds only.
-// App build + deploy jobs poll /app-status to know when their libs are ready.
 
 // --- Types ---
 
@@ -28,15 +26,41 @@ interface TimelineEntry {
   success: boolean;
 }
 
+// --- Helpers ---
+
+function elapsed(): string {
+  const s = (Date.now() - globalStart) / 1000;
+  const min = Math.floor(s / 60);
+  const sec = s % 60;
+  return min > 0 ? `${min}m${sec.toFixed(0)}s` : `${sec.toFixed(1)}s`;
+}
+
+function fmtDuration(ms: number): string {
+  const s = ms / 1000;
+  return s >= 60 ? `${Math.floor(s / 60)}m${(s % 60).toFixed(0)}s` : `${s.toFixed(1)}s`;
+}
+
+function progressBar(done: number, total: number, width = 20): string {
+  const filled = Math.round((done / total) * width);
+  return '█'.repeat(filled) + '░'.repeat(width - filled);
+}
+
 // --- Load NX graph ---
 
-console.log('=== PHASE: ANALYZE ===');
-console.log('Loading NX dependency graph...');
+console.log('');
+console.log('┌─────────────────────────────────────────────┐');
+console.log('│  🧠  COORDINATOR — Distributed Build System  │');
+console.log('└─────────────────────────────────────────────┘');
+console.log('');
+console.log('📊 Analyzing NX dependency graph...');
+
+const analyzeStart = Date.now();
 execSync('npx nx graph --file=graph.json', {
   cwd: ROOT,
   stdio: 'inherit',
   env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
 });
+console.log(`   Done in ${fmtDuration(Date.now() - analyzeStart)}`);
 
 const graphData = JSON.parse(readFileSync(join(ROOT, 'graph.json'), 'utf-8'));
 const graph = graphData.graph;
@@ -84,45 +108,50 @@ for (const app of apps) {
   appDeps[app] = [...visited];
 }
 
-// --- Analysis output ---
+// --- Build plan output ---
 
-console.log(`\n=== BUILD PLAN ===`);
-console.log(`Libraries: ${libs.length}`);
-console.log(`Applications: ${apps.length}`);
-for (const app of apps) {
-  console.log(`  ${app} depends on ${appDeps[app].length} libs: ${appDeps[app].slice(0, 5).join(', ')}${appDeps[app].length > 5 ? '...' : ''}`);
+console.log('');
+console.log('📋 Build Plan');
+console.log('─'.repeat(50));
+console.log(`   📦 ${libs.length} libraries to build (distributed across agents)`);
+console.log(`   🚀 ${apps.length} applications (built on separate runners)`);
+console.log('');
+const sortedApps = [...apps].sort((a, b) => appDeps[a].length - appDeps[b].length);
+for (const app of sortedApps) {
+  const count = appDeps[app].length;
+  console.log(`   ${app.padEnd(20)} ${count} libs ${count <= 5 ? '⚡ fast' : count >= 20 ? '🐢 heavy' : ''}`);
 }
+console.log('');
 
 // --- Task management ---
 
 const tasks: Record<string, Task> = {};
 const timeline: TimelineEntry[] = [];
 const globalStart = Date.now();
+const appReadyTimes: Record<string, number> = {};
 const appReadyLogged = new Set<string>();
+const agentStats: Record<string, { built: number; totalTime: number }> = {};
 
-// Create lib tasks only — apps are built by separate GHA jobs
 for (const name of libs) {
   tasks[name] = { name, state: 'pending' };
 }
 
 function logAppProgress() {
-  for (const app of apps) {
+  for (const app of sortedApps) {
     if (appReadyLogged.has(app)) continue;
     const myDeps = appDeps[app] || [];
     const doneCount = myDeps.filter((d) => tasks[d]?.state === 'done').length;
     const remaining = myDeps.length - doneCount;
     if (remaining === 0) {
-      const doneLibs = libs.filter((l) => tasks[l].state === 'done').length;
       appReadyLogged.add(app);
-      console.log(`[${elapsed()}] >>> APP READY: ${app} — all ${myDeps.length} lib deps built (${doneLibs}/${libs.length} libs total)`);
+      appReadyTimes[app] = Date.now() - globalStart;
+      const doneLibs = libs.filter((l) => tasks[l].state === 'done').length;
+      console.log(`[${elapsed()}] 🟢 ${app} READY — all ${myDeps.length} libs cached (${doneLibs}/${libs.length} total)`);
     } else {
-      const missing = myDeps
-        .filter((d) => tasks[d]?.state !== 'done')
-        .slice(0, 5);
-      const extra = myDeps.filter((d) => tasks[d]?.state !== 'done').length - missing.length;
-      console.log(
-        `[${elapsed()}]   ${app}: waiting for ${remaining}/${myDeps.length} libs [${missing.join(', ')}${extra > 0 ? `, +${extra} more` : ''}]`
-      );
+      const bar = progressBar(doneCount, myDeps.length, 15);
+      const running = myDeps.filter((d) => tasks[d]?.state === 'running');
+      const runningInfo = running.length > 0 ? ` 🔨 building: ${running.slice(0, 3).join(', ')}${running.length > 3 ? '...' : ''}` : '';
+      console.log(`[${elapsed()}]    ${app} ${bar} ${doneCount}/${myDeps.length}${runningInfo}`);
     }
   }
 }
@@ -146,14 +175,10 @@ function allLibsDone(): boolean {
 // Initial promotion
 promoteReadyTasks();
 
-// Score a ready lib: lower = higher priority (builds it sooner to unblock an app).
-// For each app that needs this lib and isn't done yet, calculate how many deps
-// that app still needs (excluding this lib). The score is the minimum across all apps.
-// Libs that bring an app closest to starting get built first.
 function scoreLib(libName: string): number {
   let minRemaining = Infinity;
   for (const app of apps) {
-    if (appReadyLogged.has(app)) continue; // app's libs already done
+    if (appReadyLogged.has(app)) continue;
     const myDeps = appDeps[app] || [];
     if (!myDeps.includes(libName)) continue;
     const remaining = myDeps.filter(
@@ -169,10 +194,7 @@ function getNextTask(agentId: string): {
   type: string | null;
   done: boolean;
 } {
-  // 1. Ready libs — pick the one that unblocks an app build fastest
-  const readyLibs = Object.values(tasks).filter(
-    (t) => t.state === 'ready'
-  );
+  const readyLibs = Object.values(tasks).filter((t) => t.state === 'ready');
   if (readyLibs.length > 0) {
     readyLibs.sort((a, b) => scoreLib(a.name) - scoreLib(b.name));
     const picked = readyLibs[0];
@@ -180,6 +202,7 @@ function getNextTask(agentId: string): {
     picked.state = 'running';
     picked.agentId = agentId;
     picked.startTime = Date.now();
+
     const closest = apps.find((app) => {
       if (appReadyLogged.has(app)) return false;
       const myDeps = appDeps[app] || [];
@@ -187,10 +210,13 @@ function getNextTask(agentId: string): {
       const remaining = myDeps.filter((d) => d !== picked.name && tasks[d]?.state !== 'done').length;
       return remaining === score;
     });
+
+    const doneCount = Object.values(tasks).filter((t) => t.state === 'done').length;
+    const runningCount = Object.values(tasks).filter((t) => t.state === 'running').length;
     const reason = score === Infinity
-      ? '(no pending app needs it)'
-      : `(unblocks ${closest}: ${score} libs remaining after this)`;
-    console.log(`[${elapsed()}] 📦 [LIB] ${agentId} → ${picked.name} ${reason}`);
+      ? ''
+      : `→ unblocks ${closest} (${score} remaining)`;
+    console.log(`[${elapsed()}] 📦 ${agentId} ← ${picked.name} ${reason}  [${doneCount} done, ${runningCount} running, ${readyLibs.length - 1} queued]`);
     return { task: picked.name, type: 'lib', done: false };
   }
 
@@ -212,20 +238,46 @@ function markTaskDone(taskName: string, success: boolean) {
     success,
   });
 
-  const duration = ((task.endTime - task.startTime!) / 1000).toFixed(1);
-  console.log(
-    `[${elapsed()}] 📦 [LIB] ${task.name} ${success ? '✅ DONE' : '❌ FAILED'} (${task.agentId}, ${duration}s)`
-  );
+  const duration = task.endTime - task.startTime!;
+  const doneCount = Object.values(tasks).filter((t) => t.state === 'done').length;
+  const icon = success ? '✅' : '❌';
+
+  // Track agent stats
+  if (!agentStats[task.agentId!]) agentStats[task.agentId!] = { built: 0, totalTime: 0 };
+  if (success) {
+    agentStats[task.agentId!].built++;
+    agentStats[task.agentId!].totalTime += duration;
+  }
+
+  console.log(`[${elapsed()}] ${icon} ${task.name} done in ${fmtDuration(duration)} (${task.agentId}) — ${progressBar(doneCount, libs.length)} ${doneCount}/${libs.length}`);
 
   logAppProgress();
   promoteReadyTasks();
 
   if (allLibsDone()) {
-    const doneCount = Object.values(tasks).filter((t) => t.state === 'done').length;
     const failedCount = Object.values(tasks).filter((t) => t.state === 'failed').length;
-    console.log(`\n${'='.repeat(60)}`);
-    console.log(`=== ALL LIBS BUILT === (${doneCount} done, ${failedCount} failed, ${((Date.now() - globalStart) / 1000).toFixed(1)}s)`);
-    console.log(`${'='.repeat(60)}`);
+    const totalTime = fmtDuration(Date.now() - globalStart);
+    console.log('');
+    console.log('╔══════════════════════════════════════════════╗');
+    console.log(`║  🏁 ALL ${libs.length} LIBS BUILT in ${totalTime}`.padEnd(47) + '║');
+    if (failedCount > 0) {
+      console.log(`║  ⚠️  ${failedCount} failed`.padEnd(47) + '║');
+    }
+    console.log('╠══════════════════════════════════════════════╣');
+    console.log('║  📊 Agent Performance                        ║');
+    for (const [agent, stats] of Object.entries(agentStats).sort((a, b) => b[1].built - a[1].built)) {
+      const avg = stats.built > 0 ? fmtDuration(stats.totalTime / stats.built) : '-';
+      const line = `║  ${agent}: ${stats.built} libs, avg ${avg}/lib`;
+      console.log(line.padEnd(47) + '║');
+    }
+    console.log('╠══════════════════════════════════════════════╣');
+    console.log('║  🚀 App Readiness                            ║');
+    for (const app of sortedApps) {
+      const readyTime = appReadyTimes[app] ? fmtDuration(appReadyTimes[app]) : 'n/a';
+      const line = `║  ${app}: ready at ${readyTime} (${appDeps[app].length} libs)`;
+      console.log(line.padEnd(47) + '║');
+    }
+    console.log('╚══════════════════════════════════════════════╝');
   }
 }
 
@@ -235,7 +287,7 @@ function getStatus() {
     counts[task.state]++;
   }
 
-  const appStatus = apps.map((app) => {
+  const appStatus = sortedApps.map((app) => {
     const myDeps = appDeps[app] || [];
     const doneCount = myDeps.filter((d) => tasks[d]?.state === 'done').length;
     return {
@@ -249,12 +301,12 @@ function getStatus() {
   return {
     ...counts,
     total: libs.length,
+    elapsed: elapsed(),
     allLibsDone: allLibsDone(),
     appStatus,
   };
 }
 
-// Endpoint for per-app polling: is this app's libs ready?
 function getAppStatus(appName: string) {
   const myDeps = appDeps[appName];
   if (!myDeps) return null;
@@ -281,18 +333,13 @@ function getAnalysis() {
       name: l,
       deps: deps[l] || [],
     })),
-    apps: apps.map((a) => ({
+    apps: sortedApps.map((a) => ({
       name: a,
       libDeps: appDeps[a],
     })),
     totalLibs: libs.length,
     totalApps: apps.length,
-    totalTasks: libs.length + apps.length + apps.length, // libs + apps + deploys
   };
-}
-
-function elapsed(): string {
-  return `${((Date.now() - globalStart) / 1000).toFixed(1)}s`;
 }
 
 // --- ASCII Gantt chart ---
@@ -307,16 +354,16 @@ function renderTimeline(): string {
   const msPerChar = maxEnd / chartWidth;
 
   const lines: string[] = [];
-  lines.push(
-    `\nTimeline (${timeline.length} tasks, ${(maxEnd / 1000).toFixed(1)}s total):\n`
-  );
+  lines.push('');
+  lines.push(`📈 Timeline — ${timeline.length} tasks, ${fmtDuration(maxEnd)} total`);
+  lines.push('─'.repeat(maxNameLen + 2 + chartWidth));
 
   // Header
   const header = ' '.repeat(maxNameLen + 2);
   const timeMarks: string[] = [];
   for (let i = 0; i <= 4; i++) {
     const t = ((maxEnd / 1000) * (i / 4)).toFixed(0);
-    timeMarks.push(`t=${t}s`);
+    timeMarks.push(`${t}s`);
   }
   const spacing = Math.floor(chartWidth / 4);
   let headerLine = header;
@@ -330,23 +377,26 @@ function renderTimeline(): string {
     header +
       Array(5)
         .fill(null)
-        .map((_, i) => '|' + (i < 4 ? ' '.repeat(spacing - 1) : ''))
+        .map((_, i) => '┊' + (i < 4 ? ' '.repeat(spacing - 1) : ''))
         .join('')
   );
+
+  // Group by agent for coloring
+  const agents = [...new Set(sorted.map((e) => e.agentId))].sort();
+  const agentSymbols = ['█', '▓', '▒', '░'];
 
   for (const entry of sorted) {
     const startCol = Math.floor(entry.start / msPerChar);
     const endCol = Math.min(chartWidth, Math.floor(entry.end / msPerChar));
     const barLen = Math.max(1, endCol - startCol);
     const name = entry.name.padEnd(maxNameLen);
-    const bar =
-      ' '.repeat(startCol) +
-      (entry.success ? '█' : '✗').repeat(barLen);
+    const sym = entry.success ? agentSymbols[agents.indexOf(entry.agentId) % agentSymbols.length] : '✗';
+    const bar = ' '.repeat(startCol) + sym.repeat(barLen);
     lines.push(`${name}  ${bar}`);
   }
 
-  lines.push('');
-  lines.push('█ = building/deploying    ✗ = failed');
+  lines.push('─'.repeat(maxNameLen + 2 + chartWidth));
+  lines.push(`Legend: ${agents.map((a, i) => `${agentSymbols[i % agentSymbols.length]} ${a}`).join('  ')}  ✗ failed`);
   lines.push('');
 
   return lines.join('\n');
@@ -426,16 +476,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n${'='.repeat(60)}`);
-  console.log(`Coordinator listening on http://localhost:${PORT}`);
-  console.log(`${'='.repeat(60)}`);
-  console.log(`\nLibs to build: ${libs.length} (agents handle these)`);
-  console.log(`Apps: ${apps.length} (separate GHA jobs poll /app-status)\n`);
-  console.log(`App lib requirements:`);
-  for (const app of apps) {
-    console.log(`  ${app}: ${appDeps[app].length} libs`);
-  }
-  const status = getStatus();
-  console.log(`\nReady: ${status.ready} | Pending: ${status.pending}`);
-  console.log(`${'='.repeat(60)}\n`);
+  console.log(`🌐 Listening on http://localhost:${PORT}`);
+  console.log(`   Waiting for agents to connect...`);
+  console.log('');
 });
