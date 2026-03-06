@@ -5,12 +5,12 @@ import { join } from 'path';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const ROOT = join(__dirname, '..');
-const LIBS_ONLY = process.env.LIBS_ONLY === 'true';
+// No more LIBS_ONLY — coordinator always handles full pipeline
 
 // --- Types ---
 
 type TaskState = 'pending' | 'ready' | 'running' | 'done' | 'failed';
-type Phase = 'analyze' | 'libs' | 'apps' | 'deploy' | 'complete';
+// No strict phases — tasks promote individually based on their deps
 
 interface Task {
   name: string;
@@ -97,85 +97,62 @@ for (const app of apps) {
 
 // --- Task management ---
 
-let currentPhase: Phase = 'libs';
 const tasks: Record<string, Task> = {};
 const timeline: TimelineEntry[] = [];
 const globalStart = Date.now();
+const appBuildStarted = new Set<string>();
 
-// Create lib tasks
+// Create all tasks upfront
 for (const name of libs) {
   tasks[name] = { name, type: 'lib', state: 'pending' };
 }
-
-if (!LIBS_ONLY) {
-  // Create app tasks (will be activated after all libs are done)
-  for (const name of apps) {
-    tasks[name] = { name, type: 'app', state: 'pending' };
-  }
-
-  // Create deploy tasks (will be activated after apps are done)
-  for (const name of apps) {
-    const deployName = `deploy:${name}`;
-    tasks[deployName] = { name: deployName, type: 'deploy', state: 'pending' };
-  }
+for (const name of apps) {
+  tasks[name] = { name, type: 'app', state: 'pending' };
+}
+for (const name of apps) {
+  tasks[`deploy:${name}`] = { name: `deploy:${name}`, type: 'deploy', state: 'pending' };
 }
 
 function promoteReadyTasks() {
-  if (currentPhase === 'libs') {
-    // Promote libs whose lib-dependencies are all done
-    for (const task of Object.values(tasks)) {
-      if (task.type !== 'lib' || task.state !== 'pending') continue;
-      const taskDeps = deps[task.name] || [];
-      const allDone = taskDeps.every((d) => tasks[d]?.state === 'done');
-      if (allDone) {
-        task.state = 'ready';
-      }
-    }
-
-    // Check if all libs are done → move to apps phase (or complete in LIBS_ONLY)
-    const allLibsDone = libs.every(
-      (l) => tasks[l].state === 'done' || tasks[l].state === 'failed'
-    );
-    if (allLibsDone) {
-      if (LIBS_ONLY) {
-        console.log(`\n=== LIBS PHASE COMPLETE (${libs.length} libs built) ===`);
-        currentPhase = 'complete';
-      } else {
-        console.log(`\n=== PHASE: APPS (all ${libs.length} libs built) ===`);
-        currentPhase = 'apps';
-        for (const app of apps) {
-          tasks[app].state = 'ready';
-        }
-      }
-    }
-  } else if (currentPhase === 'apps') {
-    // Check if all apps are done → move to deploy phase
-    const allAppsDone = apps.every(
-      (a) => tasks[a].state === 'done' || tasks[a].state === 'failed'
-    );
-    if (allAppsDone) {
-      console.log(`\n=== PHASE: DEPLOY (all ${apps.length} apps built) ===`);
-      currentPhase = 'deploy';
-      // Activate deploy tasks only for successfully built apps
-      for (const app of apps) {
-        const deployName = `deploy:${app}`;
-        if (tasks[app].state === 'done') {
-          tasks[deployName].state = 'ready';
-        } else {
-          tasks[deployName].state = 'failed';
-        }
-      }
-    }
-  } else if (currentPhase === 'deploy') {
-    const allDeploysDone = apps.every((a) => {
-      const t = tasks[`deploy:${a}`];
-      return t.state === 'done' || t.state === 'failed';
-    });
-    if (allDeploysDone) {
-      console.log(`\n=== ALL PHASES COMPLETE ===`);
-      currentPhase = 'complete';
+  // 1. Promote libs whose lib-dependencies are all done
+  for (const lib of libs) {
+    if (tasks[lib].state !== 'pending') continue;
+    const libDeps = deps[lib] || [];
+    if (libDeps.every((d) => tasks[d]?.state === 'done')) {
+      tasks[lib].state = 'ready';
     }
   }
+
+  // 2. Promote each app individually when ALL of its lib deps are done
+  for (const app of apps) {
+    if (tasks[app].state !== 'pending') continue;
+    const myDeps = appDeps[app] || [];
+    if (myDeps.every((d) => tasks[d]?.state === 'done')) {
+      tasks[app].state = 'ready';
+      if (!appBuildStarted.has(app)) {
+        appBuildStarted.add(app);
+        const doneLibs = libs.filter((l) => tasks[l].state === 'done').length;
+        console.log(`[${elapsed()}] >>> ${app} READY (all ${myDeps.length} lib deps built, ${doneLibs}/${libs.length} libs total)`);
+      }
+    }
+  }
+
+  // 3. Promote deploy when its app is done
+  for (const app of apps) {
+    const deployName = `deploy:${app}`;
+    if (tasks[deployName].state !== 'pending') continue;
+    if (tasks[app].state === 'done') {
+      tasks[deployName].state = 'ready';
+    } else if (tasks[app].state === 'failed') {
+      tasks[deployName].state = 'failed';
+    }
+  }
+}
+
+function isComplete(): boolean {
+  return Object.values(tasks).every(
+    (t) => t.state === 'done' || t.state === 'failed'
+  );
 }
 
 // Initial promotion
@@ -184,20 +161,22 @@ promoteReadyTasks();
 function getNextTask(agentId: string): {
   task: string | null;
   type: string | null;
-  phase: Phase;
   done: boolean;
 } {
-  for (const task of Object.values(tasks)) {
-    if (task.state === 'ready') {
-      task.state = 'running';
-      task.agentId = agentId;
-      task.startTime = Date.now();
-      console.log(`[${elapsed()}] [${currentPhase}] ${agentId} → ${task.name}`);
-      return { task: task.name, type: task.type, phase: currentPhase, done: false };
+  // Prioritize: libs first, then apps, then deploys
+  for (const priority of ['lib', 'app', 'deploy'] as const) {
+    for (const task of Object.values(tasks)) {
+      if (task.type === priority && task.state === 'ready') {
+        task.state = 'running';
+        task.agentId = agentId;
+        task.startTime = Date.now();
+        console.log(`[${elapsed()}] [${task.type}] ${agentId} → ${task.name}`);
+        return { task: task.name, type: task.type, done: false };
+      }
     }
   }
 
-  return { task: null, type: null, phase: currentPhase, done: currentPhase === 'complete' };
+  return { task: null, type: null, done: isComplete() };
 }
 
 function markTaskDone(taskName: string, success: boolean) {
@@ -218,18 +197,28 @@ function markTaskDone(taskName: string, success: boolean) {
 
   const duration = ((task.endTime - task.startTime!) / 1000).toFixed(1);
   console.log(
-    `[${elapsed()}] [${currentPhase}] ${task.name} ${success ? 'DONE' : 'FAILED'} (${task.agentId}, ${duration}s)`
+    `[${elapsed()}] [${task.type}] ${task.name} ${success ? 'DONE' : 'FAILED'} (${task.agentId}, ${duration}s)`
   );
 
   promoteReadyTasks();
+
+  if (isComplete()) {
+    console.log(`\n=== ALL TASKS COMPLETE ===`);
+  }
 }
 
 function getStatus() {
   const counts = { pending: 0, ready: 0, running: 0, done: 0, failed: 0 };
+  const byType = { libs: { done: 0, total: libs.length }, apps: { done: 0, total: apps.length }, deploys: { done: 0, total: apps.length } };
   for (const task of Object.values(tasks)) {
     counts[task.state]++;
+    if (task.state === 'done') {
+      if (task.type === 'lib') byType.libs.done++;
+      else if (task.type === 'app') byType.apps.done++;
+      else if (task.type === 'deploy') byType.deploys.done++;
+    }
   }
-  return { ...counts, total: Object.keys(tasks).length, phase: currentPhase };
+  return { ...counts, total: Object.keys(tasks).length, complete: isComplete(), ...byType };
 }
 
 function getAnalysis() {
@@ -379,9 +368,12 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n=== PHASE: LIBS ===`);
-  console.log(`Coordinator listening on http://localhost:${PORT}`);
+  console.log(`\nCoordinator listening on http://localhost:${PORT}`);
   console.log(`Tasks: ${libs.length} libs + ${apps.length} apps + ${apps.length} deploys = ${Object.keys(tasks).length} total`);
+  console.log(`Apps start building as soon as their lib deps are ready:`);
+  for (const app of apps) {
+    console.log(`  ${app}: needs ${appDeps[app].length} libs`);
+  }
   const status = getStatus();
   console.log(`Ready: ${status.ready}, Pending: ${status.pending}`);
 });

@@ -23,7 +23,6 @@ async function fetchJSON(url: string, options?: RequestInit, retries = 5): Promi
 async function getNextTask(): Promise<{
   task: string | null;
   type: string | null;
-  phase: string;
   done: boolean;
 }> {
   return fetchJSON(`${COORDINATOR_URL}/next-task?agentId=${AGENT_ID}`);
@@ -130,10 +129,10 @@ async function main() {
   console.log(`[${AGENT_ID}] Build plan: ${analysis.totalLibs} libs → ${analysis.totalApps} apps → ${analysis.totalApps} deploys`);
 
   while (true) {
-    const { task, type, phase, done } = await getNextTask();
+    const { task, type, done } = await getNextTask();
 
     if (task && type) {
-      console.log(`[${AGENT_ID}] [${phase}] Assigned: ${task}`);
+      console.log(`[${AGENT_ID}] Assigned: ${task} (${type})`);
       const success = executeTask(task, type);
       await reportDone(task, success);
     } else if (done) {

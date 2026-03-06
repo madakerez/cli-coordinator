@@ -11,7 +11,6 @@ env:
   NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
 
 jobs:
-  # ─── Phase 1: Build all libraries (distributed via coordinator + agents) ───
   coordinator:
     runs-on: ubuntu-latest
     steps:
@@ -27,10 +26,8 @@ jobs:
             | sudo tar xz -C /usr/local/bin
           ngrok config add-authtoken "$NGROK_AUTHTOKEN"
 
-      - name: Start coordinator (libs only)
+      - name: Start coordinator
         run: npx tsx scripts/coordinator.ts &
-        env:
-          LIBS_ONLY: 'true'
 
       - name: Wait for coordinator health
         run: |
@@ -58,14 +55,14 @@ jobs:
           name: tunnel-url
           path: /tmp/tunnel/url.txt
 
-      - name: Wait for all libs to be built
+      - name: Wait for all tasks to complete
         run: |
           while true; do
             STATUS=$(curl -sf http://localhost:8765/status)
-            PHASE=$(echo "$STATUS" | jq -r '.phase')
             echo "$(date +%H:%M:%S) $STATUS"
-            if [ "$PHASE" = "complete" ]; then
-              echo "All libs built!"
+            COMPLETE=$(echo "$STATUS" | jq -r '.complete')
+            if [ "$COMPLETE" = "true" ]; then
+              echo "All tasks complete!"
               curl -sf http://localhost:8765/timeline
               break
             fi
@@ -111,57 +108,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Build libs
+      - name: Run agent (libs + apps + deploys)
         run: npx tsx scripts/agent.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
-
-  # ─── Phase 2: Build applications (independent jobs, one per app) ───
-  build-apps:
-    needs: [coordinator, agents]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [app1, app2, app3, app4]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-      - run: npm ci
-
-      - name: Build ${{ matrix.app }}
-        run: npx nx build ${{ matrix.app }}
-
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-${{ matrix.app }}
-          path: dist/apps/${{ matrix.app }}
-
-  # ─── Phase 3: Deploy (fake) ───
-  deploy:
-    needs: [build-apps]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [app1, app2, app3, app4]
-    steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: build-${{ matrix.app }}
-          path: dist/
-
-      - name: Deploy ${{ matrix.app }}
-        run: |
-          echo "=== Deploying ${{ matrix.app }} ==="
-          echo "Checking build artifacts..."
-          ls -la dist/
-          echo "Uploading to https://${{ matrix.app }}.example.com..."
-          sleep 2
-          echo "Running health check..."
-          sleep 1
-          echo "✓ ${{ matrix.app }} deployed successfully!"
