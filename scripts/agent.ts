@@ -36,10 +36,10 @@ async function reportDone(task: string, success: boolean) {
   });
 }
 
-function run(cmd: string, label: string): boolean {
-  console.log(`[${AGENT_ID}] ${label}`);
+function buildLib(taskName: string): boolean {
+  console.log(`[${AGENT_ID}] Building lib: ${taskName}`);
   try {
-    execSync(cmd, {
+    execSync(`npx nx run ${taskName}:build --skip-nx-cache`, {
       cwd: ROOT,
       stdio: 'inherit',
       env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
@@ -47,63 +47,8 @@ function run(cmd: string, label: string): boolean {
     });
     return true;
   } catch (e) {
-    console.error(`[${AGENT_ID}] FAILED: ${label}`, (e as Error).message);
+    console.error(`[${AGENT_ID}] FAILED: ${taskName}`, (e as Error).message);
     return false;
-  }
-}
-
-function buildLib(taskName: string): boolean {
-  // Use NX_TASKS_RUNNER_DYNAMIC_OUTPUT=false and build ONLY this lib,
-  // skipping dependency builds since the coordinator ensures deps are already built.
-  // We achieve this by running the underlying SWC compiler directly via nx run.
-  return run(
-    `npx nx run ${taskName}:build --skip-nx-cache`,
-    `Building lib: ${taskName}`
-  );
-}
-
-function buildApp(taskName: string): boolean {
-  // Apps need their lib deps to be built (which they already are at this phase).
-  // Build with NX which will find all deps already cached.
-  return run(
-    `npx nx build ${taskName}`,
-    `Building app: ${taskName}`
-  );
-}
-
-function deployApp(taskName: string): boolean {
-  // Fake deploy — simulate a deployment step
-  const appName = taskName.replace('deploy:', '');
-  console.log(`[${AGENT_ID}] Deploying: ${appName}`);
-  console.log(`[${AGENT_ID}]   Checking build artifacts in dist/apps/${appName}...`);
-
-  try {
-    execSync(`ls dist/apps/${appName}/browser/index.html`, { cwd: ROOT, stdio: 'pipe' });
-  } catch {
-    console.log(`[${AGENT_ID}]   Warning: build artifacts not found locally (expected on distributed runners)`);
-  }
-
-  // Simulate upload delay
-  const delay = 1000 + Math.random() * 2000;
-  execSync(`sleep ${(delay / 1000).toFixed(1)}`);
-
-  console.log(`[${AGENT_ID}]   Uploaded ${appName} to https://${appName}.example.com`);
-  console.log(`[${AGENT_ID}]   Health check passed`);
-  console.log(`[${AGENT_ID}]   Deploy complete: ${appName}`);
-  return true;
-}
-
-function executeTask(taskName: string, type: string): boolean {
-  switch (type) {
-    case 'lib':
-      return buildLib(taskName);
-    case 'app':
-      return buildApp(taskName);
-    case 'deploy':
-      return deployApp(taskName);
-    default:
-      console.error(`[${AGENT_ID}] Unknown task type: ${type}`);
-      return false;
   }
 }
 
@@ -124,19 +69,18 @@ async function waitForCoordinator() {
 async function main() {
   await waitForCoordinator();
 
-  // Fetch and log the build plan
   const analysis = await fetchJSON(`${COORDINATOR_URL}/analyze`);
-  console.log(`[${AGENT_ID}] Build plan: ${analysis.totalLibs} libs → ${analysis.totalApps} apps → ${analysis.totalApps} deploys`);
+  console.log(`[${AGENT_ID}] Build plan: ${analysis.totalLibs} libs to build`);
 
   while (true) {
-    const { task, type, done } = await getNextTask();
+    const { task, done } = await getNextTask();
 
-    if (task && type) {
-      console.log(`[${AGENT_ID}] Assigned: ${task} (${type})`);
-      const success = executeTask(task, type);
+    if (task) {
+      console.log(`[${AGENT_ID}] Assigned: ${task}`);
+      const success = buildLib(task);
       await reportDone(task, success);
     } else if (done) {
-      console.log(`[${AGENT_ID}] All phases completed. Exiting.`);
+      console.log(`[${AGENT_ID}] All libs built. Exiting.`);
       break;
     } else {
       await new Promise((r) => setTimeout(r, POLL_INTERVAL));
