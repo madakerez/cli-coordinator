@@ -69,18 +69,12 @@ function buildLib(taskName: string): boolean {
 }
 
 async function uploadLibOutput(taskName: string) {
-  // Tar new NX cache entries for this lib (contains the actual build output)
   const newCacheEntries = getNewCacheEntries();
 
-  // Build the list of paths to tar (NX cache entries contain the build output)
+  // Build tar paths: .nx/cache/<hash>/ + .nx/cache/terminalOutputs/<hash>
   const paths: string[] = [];
   for (const entry of newCacheEntries) {
-    const entryPath = join(ROOT, '.nx', 'cache', entry);
-    if (existsSync(entryPath)) paths.push(`.nx/cache/${entry}`);
-  }
-
-  // Also include terminal output files for cache entries
-  for (const entry of newCacheEntries) {
+    if (existsSync(join(ROOT, '.nx', 'cache', entry))) paths.push(`.nx/cache/${entry}`);
     const termPath = `.nx/cache/terminalOutputs/${entry}`;
     if (existsSync(join(ROOT, termPath))) paths.push(termPath);
   }
@@ -90,23 +84,47 @@ async function uploadLibOutput(taskName: string) {
     return;
   }
 
+  // Extract DB metadata for new cache entries so the app runner can register them
+  let dbMeta: Array<{ hash: string; project: string; target: string; code: number; size: number }> = [];
   try {
-    // Create tar.gz of dist + cache entries
-    const tarCmd = `tar czf /tmp/lib-${taskName}.tar.gz ${paths.join(' ')}`;
-    execSync(tarCmd, { cwd: ROOT, stdio: 'pipe' });
+    const dbGlob = join(ROOT, '.nx', 'workspace-data', '*.db');
+    // Find the DB file
+    const wsDir = join(ROOT, '.nx', 'workspace-data');
+    const dbFile = readdirSync(wsDir).find((f) => f.endsWith('.db'));
+    if (dbFile) {
+      const dbPath = join(wsDir, dbFile);
+      const hashList = newCacheEntries.map((h) => `'${h}'`).join(',');
+      const rows = execSync(
+        `sqlite3 "${dbPath}" "SELECT td.hash, td.project, td.target, COALESCE(co.code, 0), COALESCE(co.size, 0) FROM task_details td LEFT JOIN cache_outputs co ON td.hash = co.hash WHERE td.hash IN (${hashList});"`,
+        { cwd: ROOT, encoding: 'utf-8' }
+      ).trim();
+      if (rows) {
+        dbMeta = rows.split('\n').map((row) => {
+          const [hash, project, target, code, size] = row.split('|');
+          return { hash, project, target, code: parseInt(code), size: parseInt(size) };
+        });
+      }
+    }
+  } catch (e) {
+    console.error(`[${AGENT_ID}] Could not extract DB metadata:`, (e as Error).message);
+  }
 
-    // Read and POST to coordinator
+  try {
+    // Create tar.gz of cache entries
+    execSync(`tar czf /tmp/lib-${taskName}.tar.gz ${paths.join(' ')}`, { cwd: ROOT, stdio: 'pipe' });
     const tarData = require('fs').readFileSync(`/tmp/lib-${taskName}.tar.gz`);
+
+    // Upload tar + metadata as JSON envelope
+    const payload = JSON.stringify({ meta: dbMeta, tar: tarData.toString('base64') });
     const res = await fetch(`${COORDINATOR_URL}/upload-lib?name=${taskName}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/octet-stream' },
-      body: tarData,
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
     });
-    const result = await res.json();
+    await res.json();
     const sizeKB = (tarData.length / 1024).toFixed(1);
-    console.log(`[${AGENT_ID}] Uploaded ${taskName} output (${sizeKB} KB, ${paths.length} paths)`);
+    console.log(`[${AGENT_ID}] Uploaded ${taskName} (${sizeKB} KB tar, ${dbMeta.length} DB entries)`);
 
-    // Update known entries
     knownCacheEntries = snapshotCacheEntries();
   } catch (e) {
     console.error(`[${AGENT_ID}] Upload failed for ${taskName}:`, (e as Error).message);

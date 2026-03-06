@@ -101,8 +101,12 @@ const timeline: TimelineEntry[] = [];
 const globalStart = Date.now();
 const appReadyLogged = new Set<string>();
 
-// Store built lib outputs (tar.gz buffers) keyed by lib name
-const libOutputs: Record<string, Buffer> = {};
+// Store built lib outputs keyed by lib name
+interface LibOutput {
+  tar: Buffer;  // tar.gz of .nx/cache entries
+  meta: Array<{ hash: string; project: string; target: string; code: number; size: number }>;
+}
+const libOutputs: Record<string, LibOutput> = {};
 
 // Create lib tasks only — apps are built by separate GHA jobs
 for (const name of libs) {
@@ -425,7 +429,7 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Agent uploads built lib output (tar.gz of dist + .nx/cache for this lib)
+  // Agent uploads built lib output (JSON with base64 tar + DB metadata)
   if (req.method === 'POST' && url.pathname === '/upload-lib') {
     const libName = url.searchParams.get('name');
     if (!libName) {
@@ -436,15 +440,22 @@ const server = http.createServer((req, res) => {
     const chunks: Buffer[] = [];
     req.on('data', (chunk: Buffer) => chunks.push(chunk));
     req.on('end', () => {
-      libOutputs[libName] = Buffer.concat(chunks);
-      const sizeKB = (libOutputs[libName].length / 1024).toFixed(1);
-      console.log(`[${elapsed()}] 📤 Received lib output: ${libName} (${sizeKB} KB)`);
-      res.end(JSON.stringify({ ok: true, size: libOutputs[libName].length }));
+      try {
+        const payload = JSON.parse(Buffer.concat(chunks).toString());
+        const tarBuf = Buffer.from(payload.tar, 'base64');
+        libOutputs[libName] = { tar: tarBuf, meta: payload.meta || [] };
+        const sizeKB = (tarBuf.length / 1024).toFixed(1);
+        console.log(`[${elapsed()}] 📤 Received: ${libName} (${sizeKB} KB, ${payload.meta?.length || 0} DB rows)`);
+        res.end(JSON.stringify({ ok: true, size: tarBuf.length }));
+      } catch (e) {
+        res.statusCode = 400;
+        res.end(JSON.stringify({ error: 'Invalid payload' }));
+      }
     });
     return;
   }
 
-  // App job downloads all built lib outputs it needs (combined tar.gz)
+  // App job downloads all built lib outputs it needs (JSON with tars + DB metadata)
   if (req.method === 'GET' && url.pathname === '/download-libs') {
     const appName = url.searchParams.get('app');
     if (!appName) {
@@ -463,31 +474,25 @@ const server = http.createServer((req, res) => {
     const missing = myDeps.filter((d) => !libOutputs[d]);
     console.log(`[${elapsed()}] 📥 ${appName} downloading libs: ${available.length}/${myDeps.length} available${missing.length > 0 ? ` (missing: ${missing.join(', ')})` : ''}`);
 
-    // Concatenate individual tar.gz streams using a wrapper tar
-    // Each lib output is already a tar.gz — we'll send a simple manifest + binary blobs
-    const manifest = {
-      app: appName,
-      libs: available.map((name) => ({ name, size: libOutputs[name].length })),
-      missing,
-    };
-    const manifestBuf = Buffer.from(JSON.stringify(manifest) + '\n');
-    // Protocol: 4 bytes manifest length (LE) + manifest JSON + for each lib: 4 bytes name length + name + 4 bytes data length + data
-    const parts: Buffer[] = [];
-    const manifestLen = Buffer.alloc(4);
-    manifestLen.writeUInt32LE(manifestBuf.length);
-    parts.push(manifestLen, manifestBuf);
-
+    // Collect all DB metadata rows and tars
+    const allMeta: Array<{ hash: string; project: string; target: string; code: number; size: number }> = [];
+    const libTars: Array<{ name: string; tar: string }> = [];
     for (const name of available) {
-      const nameBuf = Buffer.from(name);
-      const nameLen = Buffer.alloc(4);
-      nameLen.writeUInt32LE(nameBuf.length);
-      const dataLen = Buffer.alloc(4);
-      dataLen.writeUInt32LE(libOutputs[name].length);
-      parts.push(nameLen, nameBuf, dataLen, libOutputs[name]);
+      const output = libOutputs[name];
+      allMeta.push(...output.meta);
+      libTars.push({ name, tar: output.tar.toString('base64') });
     }
 
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.end(Buffer.concat(parts));
+    const response = {
+      app: appName,
+      available: available.length,
+      missing,
+      meta: allMeta,
+      libs: libTars,
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify(response));
     return;
   }
 
