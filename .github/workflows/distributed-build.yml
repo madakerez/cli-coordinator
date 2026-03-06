@@ -14,16 +14,37 @@ env:
   NX_KEY: ${{ secrets.NX_KEY }}
 
 jobs:
-  # ─── Coordinator: analyzes NX dep graph, distributes lib tasks to agents via ngrok ───
-  coordinator:
-    name: "Coordinator"
+  # ─── Prepare: install dependencies once, cache for all jobs ───
+  prepare:
+    name: "Prepare"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache@v4
+        id: nm-cache
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
+      - if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+  # ─── Coordinator: analyzes NX dep graph, distributes lib tasks to agents via ngrok ───
+  coordinator:
+    name: "Coordinator"
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
 
       - name: Install ngrok
         run: |
@@ -100,6 +121,7 @@ jobs:
   # ─── Agents: poll coordinator for tasks, build libs, push cache to MinIO ───
   agents:
     name: "Agent ${{ matrix.agent }}"
+    needs: [prepare]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -110,7 +132,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
 
       - name: Connect to coordinator
         run: |
@@ -144,13 +169,17 @@ jobs:
   # ─── App builds: poll coordinator, start ASAP when their libs are cached in MinIO ───
   build-app1:
     name: "Build app1"
+    needs: [prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
       - name: Connect to coordinator
         run: |
           echo "📡 Waiting for coordinator tunnel URL..."
@@ -169,9 +198,11 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for 18 libs to be cached
+      - name: Wait for app1 libs to be cached
         run: |
-          echo "⏳ Waiting for app1 dependencies (18 libs)..."
+          STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app1" 2>/dev/null) || true
+          LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded // "?"')
+          echo "⏳ Waiting for app1 dependencies (${LIBS_NEEDED} libs)..."
           START_TIME=$(date +%s)
           PREV_READY=0
           while true; do
@@ -189,7 +220,7 @@ jobs:
             fi
             if [ "$READY" = "true" ]; then
               echo ""
-              echo "🟢 All 18 libs cached in ${ELAPSED}s — starting app build"
+              echo "🟢 All ${LIBS_NEEDED} libs cached in ${ELAPSED}s — starting app build"
               break
             fi
             sleep 3
@@ -211,13 +242,17 @@ jobs:
 
   build-app2:
     name: "Build app2"
+    needs: [prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
       - name: Connect to coordinator
         run: |
           echo "📡 Waiting for coordinator tunnel URL..."
@@ -236,9 +271,11 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for 4 libs to be cached
+      - name: Wait for app2 libs to be cached
         run: |
-          echo "⏳ Waiting for app2 dependencies (4 libs)..."
+          STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app2" 2>/dev/null) || true
+          LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded // "?"')
+          echo "⏳ Waiting for app2 dependencies (${LIBS_NEEDED} libs)..."
           START_TIME=$(date +%s)
           PREV_READY=0
           while true; do
@@ -256,7 +293,7 @@ jobs:
             fi
             if [ "$READY" = "true" ]; then
               echo ""
-              echo "🟢 All 4 libs cached in ${ELAPSED}s — starting app build"
+              echo "🟢 All ${LIBS_NEEDED} libs cached in ${ELAPSED}s — starting app build"
               break
             fi
             sleep 3
@@ -278,13 +315,17 @@ jobs:
 
   build-app3:
     name: "Build app3"
+    needs: [prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
       - name: Connect to coordinator
         run: |
           echo "📡 Waiting for coordinator tunnel URL..."
@@ -303,9 +344,11 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for 16 libs to be cached
+      - name: Wait for app3 libs to be cached
         run: |
-          echo "⏳ Waiting for app3 dependencies (16 libs)..."
+          STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app3" 2>/dev/null) || true
+          LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded // "?"')
+          echo "⏳ Waiting for app3 dependencies (${LIBS_NEEDED} libs)..."
           START_TIME=$(date +%s)
           PREV_READY=0
           while true; do
@@ -323,7 +366,7 @@ jobs:
             fi
             if [ "$READY" = "true" ]; then
               echo ""
-              echo "🟢 All 16 libs cached in ${ELAPSED}s — starting app build"
+              echo "🟢 All ${LIBS_NEEDED} libs cached in ${ELAPSED}s — starting app build"
               break
             fi
             sleep 3
@@ -345,13 +388,17 @@ jobs:
 
   build-app4:
     name: "Build app4"
+    needs: [prepare]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm ci
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
       - name: Connect to coordinator
         run: |
           echo "📡 Waiting for coordinator tunnel URL..."
@@ -370,9 +417,11 @@ jobs:
           echo "COORDINATOR_URL=$(cat /tmp/tunnel/url.txt)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ github.token }}
-      - name: Wait for 23 libs to be cached
+      - name: Wait for app4 libs to be cached
         run: |
-          echo "⏳ Waiting for app4 dependencies (23 libs)..."
+          STATUS=$(curl -sf "${COORDINATOR_URL}/app-status?app=app4" 2>/dev/null) || true
+          LIBS_NEEDED=$(echo "$STATUS" | jq -r '.libsNeeded // "?"')
+          echo "⏳ Waiting for app4 dependencies (${LIBS_NEEDED} libs)..."
           START_TIME=$(date +%s)
           PREV_READY=0
           while true; do
@@ -390,7 +439,7 @@ jobs:
             fi
             if [ "$READY" = "true" ]; then
               echo ""
-              echo "🟢 All 23 libs cached in ${ELAPSED}s — starting app build"
+              echo "🟢 All ${LIBS_NEEDED} libs cached in ${ELAPSED}s — starting app build"
               break
             fi
             sleep 3
