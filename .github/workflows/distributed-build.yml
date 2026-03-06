@@ -8,8 +8,10 @@ permissions:
 
 env:
   NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+  NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
 
 jobs:
+  # ─── Phase 1: Build all libraries (distributed via coordinator + agents) ───
   coordinator:
     runs-on: ubuntu-latest
     steps:
@@ -17,30 +19,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - run: npm ci
 
-      # Install and configure ngrok
       - name: Install ngrok
         run: |
           curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz \
             | sudo tar xz -C /usr/local/bin
           ngrok config add-authtoken "$NGROK_AUTHTOKEN"
 
-      # Start coordinator in background
-      - name: Start coordinator
+      - name: Start coordinator (libs only)
         run: npx tsx scripts/coordinator.ts &
         env:
-          NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
+          LIBS_ONLY: 'true'
 
-      - name: Wait for coordinator
+      - name: Wait for coordinator health
         run: |
           for i in $(seq 1 30); do
             curl -sf http://localhost:8765/health && break || sleep 1
           done
 
-      # Start ngrok tunnel and save URL as artifact
-      - name: Start tunnel
+      - name: Start ngrok tunnel
         run: |
           ngrok http 8765 --log=stdout &
           sleep 5
@@ -49,10 +47,7 @@ jobs:
             if [ -n "$URL" ]; then break; fi
             sleep 2
           done
-          if [ -z "$URL" ]; then
-            echo "ERROR: ngrok tunnel failed to start"
-            exit 1
-          fi
+          if [ -z "$URL" ]; then echo "ERROR: ngrok tunnel failed"; exit 1; fi
           echo "Tunnel URL: $URL"
           mkdir -p /tmp/tunnel
           echo "$URL" > /tmp/tunnel/url.txt
@@ -63,15 +58,14 @@ jobs:
           name: tunnel-url
           path: /tmp/tunnel/url.txt
 
-      # Wait for all tasks to complete
-      - name: Wait for completion
+      - name: Wait for all libs to be built
         run: |
           while true; do
             STATUS=$(curl -sf http://localhost:8765/status)
+            PHASE=$(echo "$STATUS" | jq -r '.phase')
             echo "$(date +%H:%M:%S) $STATUS"
-            REMAINING=$(echo "$STATUS" | jq '.pending + .ready + .running')
-            if [ "$REMAINING" = "0" ]; then
-              echo "All tasks done!"
+            if [ "$PHASE" = "complete" ]; then
+              echo "All libs built!"
               curl -sf http://localhost:8765/timeline
               break
             fi
@@ -80,7 +74,6 @@ jobs:
         timeout-minutes: 30
 
   agents:
-    # No needs - starts in parallel with coordinator
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -91,11 +84,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-
       - run: npm ci
 
-      # Wait for tunnel URL artifact from coordinator
-      - name: Wait for coordinator
+      - name: Wait for tunnel URL
         run: |
           for i in $(seq 1 60); do
             ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
@@ -120,8 +111,57 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Run agent
+      - name: Build libs
         run: npx tsx scripts/agent.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
-          NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
+
+  # ─── Phase 2: Build applications (independent jobs, one per app) ───
+  build-apps:
+    needs: [coordinator, agents]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [app1, app2, app3, app4]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+
+      - name: Build ${{ matrix.app }}
+        run: npx nx build ${{ matrix.app }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.app }}
+          path: dist/apps/${{ matrix.app }}
+
+  # ─── Phase 3: Deploy (fake) ───
+  deploy:
+    needs: [build-apps]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [app1, app2, app3, app4]
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-${{ matrix.app }}
+          path: dist/
+
+      - name: Deploy ${{ matrix.app }}
+        run: |
+          echo "=== Deploying ${{ matrix.app }} ==="
+          echo "Checking build artifacts..."
+          ls -la dist/
+          echo "Uploading to https://${{ matrix.app }}.example.com..."
+          sleep 2
+          echo "Running health check..."
+          sleep 1
+          echo "✓ ${{ matrix.app }} deployed successfully!"

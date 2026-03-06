@@ -5,6 +5,7 @@ import { join } from 'path';
 
 const PORT = parseInt(process.env.PORT || '8765', 10);
 const ROOT = join(__dirname, '..');
+const LIBS_ONLY = process.env.LIBS_ONLY === 'true';
 
 // --- Types ---
 
@@ -106,15 +107,17 @@ for (const name of libs) {
   tasks[name] = { name, type: 'lib', state: 'pending' };
 }
 
-// Create app tasks (will be activated after all libs are done)
-for (const name of apps) {
-  tasks[name] = { name, type: 'app', state: 'pending' };
-}
+if (!LIBS_ONLY) {
+  // Create app tasks (will be activated after all libs are done)
+  for (const name of apps) {
+    tasks[name] = { name, type: 'app', state: 'pending' };
+  }
 
-// Create deploy tasks (will be activated after apps are done)
-for (const name of apps) {
-  const deployName = `deploy:${name}`;
-  tasks[deployName] = { name: deployName, type: 'deploy', state: 'pending' };
+  // Create deploy tasks (will be activated after apps are done)
+  for (const name of apps) {
+    const deployName = `deploy:${name}`;
+    tasks[deployName] = { name: deployName, type: 'deploy', state: 'pending' };
+  }
 }
 
 function promoteReadyTasks() {
@@ -129,16 +132,20 @@ function promoteReadyTasks() {
       }
     }
 
-    // Check if all libs are done → move to apps phase
+    // Check if all libs are done → move to apps phase (or complete in LIBS_ONLY)
     const allLibsDone = libs.every(
       (l) => tasks[l].state === 'done' || tasks[l].state === 'failed'
     );
     if (allLibsDone) {
-      console.log(`\n=== PHASE: APPS (all ${libs.length} libs built) ===`);
-      currentPhase = 'apps';
-      // All apps become ready immediately (they're independent of each other)
-      for (const app of apps) {
-        tasks[app].state = 'ready';
+      if (LIBS_ONLY) {
+        console.log(`\n=== LIBS PHASE COMPLETE (${libs.length} libs built) ===`);
+        currentPhase = 'complete';
+      } else {
+        console.log(`\n=== PHASE: APPS (all ${libs.length} libs built) ===`);
+        currentPhase = 'apps';
+        for (const app of apps) {
+          tasks[app].state = 'ready';
+        }
       }
     }
   } else if (currentPhase === 'apps') {
