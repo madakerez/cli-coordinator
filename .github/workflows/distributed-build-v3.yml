@@ -42,10 +42,19 @@ jobs:
 
           echo ""
           echo "📡 Initializing coordinator at ${COORDINATOR_URL}..."
-          GRAPH=$(node -e "console.log(JSON.stringify(require('./graph.json').graph))")
+          node -e "
+            const g = require('./graph.json').graph;
+            const payload = JSON.stringify({
+              graph: g,
+              commitSha: '${{ github.sha }}',
+              branch: '${{ github.ref_name }}',
+              triggeredBy: '${{ github.actor }}'
+            });
+            require('fs').writeFileSync('/tmp/init-payload.json', payload);
+          "
           RESPONSE=$(curl -sf -X POST "${COORDINATOR_URL}/init" \
             -H "Content-Type: application/json" \
-            -d "{\"graph\": ${GRAPH}, \"commitSha\": \"${{ github.sha }}\", \"branch\": \"${{ github.ref_name }}\", \"triggeredBy\": \"${{ github.actor }}\"}")
+            -d @/tmp/init-payload.json)
           echo "   $RESPONSE"
           echo ""
           echo "✅ Coordinator ready"
