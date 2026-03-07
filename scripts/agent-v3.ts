@@ -1,9 +1,11 @@
 import { exec } from 'child_process';
 import { join } from 'path';
+import { availableParallelism } from 'os';
 
 const COORDINATOR_URL = process.env.COORDINATOR_URL || 'http://localhost:8765';
 const AGENT_ID = process.env.AGENT_ID || `agent-${process.pid}`;
-const CONCURRENCY = parseInt(process.env.AGENT_CONCURRENCY || '2', 10);
+const rawConcurrency = parseInt(process.env.AGENT_CONCURRENCY || '0', 10);
+const CONCURRENCY = rawConcurrency > 0 ? rawConcurrency : availableParallelism();
 const ROOT = join(__dirname, '..');
 const POLL_INTERVAL = 2000;
 

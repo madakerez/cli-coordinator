@@ -82,4 +82,4 @@ jobs:
         run: npx tsx scripts/agent-v3.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
-          AGENT_CONCURRENCY: '2'
+          AGENT_CONCURRENCY: '0'
