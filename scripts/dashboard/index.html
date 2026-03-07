@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Build Coordinator</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{bg:'#0d1117',surface:'#161b22',border:'#30363d',text:'#c9d1d9',muted:'#8b949e',accent:'#58a6ff',green:'#3fb950',red:'#f85149',yellow:'#d29922',purple:'#bc8cff'}}}}</script>
+<style>
+body{background:#0d1117;color:#c9d1d9;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:13px}
+.glow{box-shadow:0 0 15px rgba(88,166,255,0.1)}
+::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#161b22}::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+.live-dot{animation:pulse-dot 1.5s ease-in-out infinite}
+@keyframes slide-in{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.log-entry{animation:slide-in .2s ease-out}
+.gantt-bar{transition:width .3s ease-out}
+.tab-active{border-bottom:2px solid #58a6ff;color:#58a6ff}
+.tab:hover{color:#58a6ff}
+pre{white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body class="min-h-screen">
+
+<nav class="border-b border-border px-6 py-3 flex items-center justify-between sticky top-0 bg-bg/95 backdrop-blur z-50">
+  <div class="flex items-center gap-3">
+    <span class="text-lg font-bold text-accent">⚡ Build Coordinator</span>
+    <span id="run-badge" class="text-xs px-2 py-0.5 rounded-full bg-surface border border-border text-muted hidden"></span>
+  </div>
+  <div class="flex items-center gap-4">
+    <span id="ws-status" class="text-xs text-muted">connecting...</span>
+    <span id="elapsed" class="text-sm text-muted"></span>
+  </div>
+</nav>
+
+<div class="flex border-b border-border px-6">
+  <button onclick="showTab('overview')" class="tab tab-active px-4 py-2 text-sm" data-tab="overview">Overview</button>
+  <button onclick="showTab('timeline')" class="tab px-4 py-2 text-sm text-muted" data-tab="timeline">Timeline</button>
+  <button onclick="showTab('agents')" class="tab px-4 py-2 text-sm text-muted" data-tab="agents">Agents</button>
+  <button onclick="showTab('graph')" class="tab px-4 py-2 text-sm text-muted" data-tab="graph">Dep Graph</button>
+  <button onclick="showTab('logs')" class="tab px-4 py-2 text-sm text-muted" data-tab="logs">Live Logs</button>
+  <button onclick="showTab('history')" class="tab px-4 py-2 text-sm text-muted" data-tab="history">History</button>
+</div>
+
+<!-- OVERVIEW TAB -->
+<div id="tab-overview" class="tab-content p-6 space-y-6">
+  <div id="no-run" class="text-center py-20 text-muted">
+    <div class="text-6xl mb-4">⏳</div>
+    <div class="text-xl">No active build</div>
+    <div class="text-sm mt-2">Waiting for a workflow to call POST /init...</div>
+  </div>
+  <div id="run-active" class="hidden">
+    <!-- Progress cards -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="bg-surface border border-border rounded-lg p-4 glow">
+        <div class="text-muted text-xs mb-1">LIBS</div>
+        <div class="text-2xl font-bold"><span id="libs-done">0</span><span class="text-muted text-sm">/<span id="libs-total">0</span></span></div>
+        <div class="w-full bg-bg rounded-full h-2 mt-2"><div id="libs-bar" class="bg-green rounded-full h-2 transition-all" style="width:0%"></div></div>
+      </div>
+      <div class="bg-surface border border-border rounded-lg p-4 glow">
+        <div class="text-muted text-xs mb-1">APPS</div>
+        <div class="text-2xl font-bold"><span id="apps-done">0</span><span class="text-muted text-sm">/<span id="apps-total">0</span></span></div>
+        <div class="w-full bg-bg rounded-full h-2 mt-2"><div id="apps-bar" class="bg-purple rounded-full h-2 transition-all" style="width:0%"></div></div>
+      </div>
+      <div class="bg-surface border border-border rounded-lg p-4 glow">
+        <div class="text-muted text-xs mb-1">CACHE HITS</div>
+        <div class="text-2xl font-bold" id="cache-hits">0</div>
+        <div class="text-xs text-muted mt-1" id="cache-pct">0% hit rate</div>
+      </div>
+      <div class="bg-surface border border-border rounded-lg p-4 glow">
+        <div class="text-muted text-xs mb-1">AGENTS</div>
+        <div class="text-2xl font-bold" id="agent-count">0</div>
+        <div class="text-xs text-muted mt-1" id="building-count">0 building</div>
+      </div>
+    </div>
+
+    <!-- App status -->
+    <div class="bg-surface border border-border rounded-lg p-4">
+      <div class="text-sm font-bold text-accent mb-3">App Readiness</div>
+      <div id="app-status" class="space-y-2"></div>
+    </div>
+
+    <!-- Recent events -->
+    <div class="bg-surface border border-border rounded-lg p-4 mt-4">
+      <div class="text-sm font-bold text-accent mb-3">Recent Events</div>
+      <div id="events" class="space-y-1 max-h-64 overflow-y-auto font-mono text-xs"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TIMELINE TAB -->
+<div id="tab-timeline" class="tab-content p-6 hidden">
+  <div class="bg-surface border border-border rounded-lg p-4">
+    <div class="text-sm font-bold text-accent mb-3">Build Timeline (Gantt)</div>
+    <div id="gantt" class="overflow-x-auto" style="min-height:200px"></div>
+  </div>
+</div>
+
+<!-- AGENTS TAB -->
+<div id="tab-agents" class="tab-content p-6 hidden">
+  <div id="agents-grid" class="grid grid-cols-2 gap-4"></div>
+</div>
+
+<!-- GRAPH TAB -->
+<div id="tab-graph" class="tab-content p-6 hidden">
+  <div class="bg-surface border border-border rounded-lg p-4">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-accent">Dependency Graph</div>
+      <select id="graph-filter" onchange="renderGraph()" class="bg-bg border border-border rounded px-2 py-1 text-xs">
+        <option value="all">All</option>
+        <option value="app1">app1</option>
+        <option value="app2">app2</option>
+        <option value="app3">app3</option>
+        <option value="app4">app4</option>
+        <option value="shared">shared</option>
+      </select>
+    </div>
+    <canvas id="graph-canvas" class="w-full" style="height:500px"></canvas>
+  </div>
+</div>
+
+<!-- LOGS TAB -->
+<div id="tab-logs" class="tab-content p-6 hidden">
+  <div class="bg-surface border border-border rounded-lg p-4">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-accent">Live Build Logs</div>
+      <select id="log-filter" class="bg-bg border border-border rounded px-2 py-1 text-xs">
+        <option value="all">All tasks</option>
+      </select>
+    </div>
+    <div id="log-stream" class="font-mono text-xs max-h-[600px] overflow-y-auto bg-bg rounded p-3 space-y-0.5"></div>
+  </div>
+</div>
+
+<!-- HISTORY TAB -->
+<div id="tab-history" class="tab-content p-6 hidden">
+  <div class="bg-surface border border-border rounded-lg p-4">
+    <div class="text-sm font-bold text-accent mb-3">Build History</div>
+    <div id="history-list" class="space-y-2"></div>
+  </div>
+</div>
+
+<script>
+const WS_URL = `ws://${location.host}`;
+const API = '';
+let ws, state = {}, events = [], reconnectTimer;
+
+// --- WebSocket ---
+function connect() {
+  ws = new WebSocket(WS_URL);
+  ws.onopen = () => { document.getElementById('ws-status').innerHTML = '<span class="live-dot inline-block w-2 h-2 rounded-full bg-green mr-1"></span>live'; };
+  ws.onclose = () => { document.getElementById('ws-status').textContent = 'reconnecting...'; reconnectTimer = setTimeout(connect, 2000); };
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+    handleEvent(msg.event, msg.data);
+  };
+}
+
+function handleEvent(event, data) {
+  switch(event) {
+    case 'init':
+      state = data;
+      if (data.active) updateUI();
+      break;
+    case 'run-started':
+      fetchStatus();
+      break;
+    case 'task-assigned':
+    case 'task-done':
+    case 'agent-connected':
+    case 'app-ready':
+    case 'app-built':
+      addEvent(event, data);
+      fetchStatus();
+      break;
+    case 'task-log':
+      addLogLine(data.task, data.log);
+      break;
+    case 'run-complete':
+      fetchStatus();
+      break;
+  }
+}
+
+function addEvent(type, data) {
+  const time = new Date().toLocaleTimeString();
+  let text = '';
+  const icons = { 'task-assigned': '📦', 'task-done': data?.success ? '✅' : '❌', 'agent-connected': '🤖', 'app-ready': '🟢', 'app-built': '🚀' };
+  const icon = icons[type] || '📌';
+
+  switch(type) {
+    case 'task-assigned': text = `${data.agentId} ← ${data.task} (${data.type})`; break;
+    case 'task-done': text = `${data.task} ${data.success ? 'done' : 'FAILED'} in ${fmtMs(data.duration)}${data.cacheHit ? ' [cache]' : ''}`; break;
+    case 'agent-connected': text = `${data.agentId} connected`; break;
+    case 'app-ready': text = `${data.app} — all ${data.libCount} libs ready`; break;
+    case 'app-built': text = `${data.app} built in ${fmtMs(data.duration)} by ${data.agentId}`; break;
+  }
+  events.unshift({ time, icon, text, type });
+  if (events.length > 200) events.pop();
+  renderEvents();
+}
+
+// --- API ---
+async function fetchStatus() {
+  try {
+    const r = await fetch(`${API}/status`);
+    state = await r.json();
+    updateUI();
+  } catch {}
+}
+
+async function fetchHistory() {
+  try {
+    const r = await fetch(`${API}/runs`);
+    const runs = await r.json();
+    renderHistory(runs);
+  } catch {}
+}
+
+// --- UI Updates ---
+function updateUI() {
+  const s = state;
+  if (!s.active) { document.getElementById('no-run').classList.remove('hidden'); document.getElementById('run-active').classList.add('hidden'); return; }
+  document.getElementById('no-run').classList.add('hidden');
+  document.getElementById('run-active').classList.remove('hidden');
+
+  const badge = document.getElementById('run-badge');
+  badge.classList.remove('hidden');
+  badge.textContent = `${s.commitSha?.slice(0,8)} · ${s.branch}`;
+  badge.className = `text-xs px-2 py-0.5 rounded-full border ${s.allDone ? 'bg-green/10 border-green text-green' : 'bg-accent/10 border-accent text-accent'}`;
+
+  document.getElementById('elapsed').textContent = s.elapsed;
+  document.getElementById('libs-done').textContent = s.done;
+  document.getElementById('libs-total').textContent = s.total;
+  document.getElementById('libs-bar').style.width = `${s.total ? (s.done/s.total)*100 : 0}%`;
+
+  const appsDone = s.appStatus?.filter(a => a.buildState === 'done').length || 0;
+  const appsTotal = s.appStatus?.length || 0;
+  document.getElementById('apps-done').textContent = appsDone;
+  document.getElementById('apps-total').textContent = appsTotal;
+  document.getElementById('apps-bar').style.width = `${appsTotal ? (appsDone/appsTotal)*100 : 0}%`;
+
+  document.getElementById('cache-hits').textContent = s.cacheHits || 0;
+  document.getElementById('cache-pct').textContent = s.done > 0 ? `${Math.round((s.cacheHits||0)/s.done*100)}% hit rate` : '—';
+
+  const agents = s.agents || [];
+  document.getElementById('agent-count').textContent = agents.length;
+  document.getElementById('building-count').textContent = `${s.running || 0} building`;
+
+  // App status
+  const appEl = document.getElementById('app-status');
+  appEl.innerHTML = (s.appStatus || []).map(a => {
+    const pct = a.libsNeeded ? Math.round(a.libsReady/a.libsNeeded*100) : 0;
+    const statusIcon = a.buildState === 'done' ? '✅' : a.buildState === 'running' ? '🔨' : a.libsDone ? '🟢' : '⏳';
+    const statusText = a.buildState === 'done' ? `Built${a.buildTime ? ' in '+fmtMs(a.buildTime) : ''}` : a.buildState === 'running' ? `Building (${a.builtBy})` : a.libsDone ? 'Ready' : `${a.libsReady}/${a.libsNeeded} libs`;
+    const readyText = a.readyAt ? ` · libs at ${fmtMs(a.readyAt)}` : '';
+    return `<div class="flex items-center gap-3">
+      <span class="w-5 text-center">${statusIcon}</span>
+      <span class="w-16 font-bold">${a.name}</span>
+      <div class="flex-1 bg-bg rounded-full h-2"><div class="rounded-full h-2 transition-all ${a.buildState==='done'?'bg-green':a.libsDone?'bg-accent':'bg-yellow'}" style="width:${pct}%"></div></div>
+      <span class="text-xs text-muted w-48 text-right">${statusText}${readyText}</span>
+    </div>`;
+  }).join('');
+
+  renderAgents(agents);
+  renderGantt();
+}
+
+function renderEvents() {
+  const el = document.getElementById('events');
+  el.innerHTML = events.slice(0, 50).map(e =>
+    `<div class="log-entry flex gap-2"><span class="text-muted shrink-0">${e.time}</span><span>${e.icon}</span><span>${e.text}</span></div>`
+  ).join('');
+}
+
+function renderAgents(agents) {
+  const el = document.getElementById('agents-grid');
+  el.innerHTML = agents.map(a => {
+    const avg = a.tasksCompleted > 0 ? fmtMs(a.avgBuildTime) : '—';
+    return `<div class="bg-surface border border-border rounded-lg p-4">
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold text-accent">${a.id}</span>
+        ${a.currentTask ? `<span class="text-xs bg-yellow/10 text-yellow px-2 py-0.5 rounded">🔨 ${a.currentTask}</span>` : '<span class="text-xs text-muted">idle</span>'}
+      </div>
+      <div class="grid grid-cols-3 gap-2 text-xs">
+        <div><span class="text-muted">Done:</span> ${a.tasksCompleted}</div>
+        <div><span class="text-muted">Failed:</span> ${a.tasksFailed}</div>
+        <div><span class="text-muted">Avg:</span> ${avg}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGantt() {
+  if (!state.active) return;
+  fetch(`${API}/status`).then(r => r.json()).then(s => {
+    if (!s.active) return;
+    const el = document.getElementById('gantt');
+    // We need timeline data from the run
+    fetch(`${API}/runs/${s.runId}`).then(r => r.json()).then(run => {
+      if (!run.timeline || run.timeline.length === 0) { el.innerHTML = '<div class="text-muted text-sm">No tasks completed yet</div>'; return; }
+      const tl = run.timeline.sort((a,b) => a.start - b.start);
+      const maxEnd = Math.max(...tl.map(t => t.end));
+      const agents = [...new Set(tl.map(t => t.agentId))].sort();
+      const colors = ['#58a6ff','#3fb950','#d29922','#f85149','#bc8cff','#79c0ff','#56d364','#e3b341','#ff7b72','#d2a8ff'];
+
+      let html = '<div class="text-xs text-muted mb-2">Total: ' + fmtMs(maxEnd) + ' · ' + tl.length + ' tasks</div>';
+      html += '<div style="position:relative;overflow-x:auto">';
+
+      // Time axis
+      html += '<div class="flex justify-between text-xs text-muted mb-1" style="margin-left:140px">';
+      for (let i = 0; i <= 4; i++) html += `<span>${fmtMs(maxEnd * i / 4)}</span>`;
+      html += '</div>';
+
+      for (const entry of tl) {
+        const left = maxEnd > 0 ? (entry.start / maxEnd * 100) : 0;
+        const width = maxEnd > 0 ? Math.max(0.5, (entry.end - entry.start) / maxEnd * 100) : 0;
+        const color = entry.success ? colors[agents.indexOf(entry.agentId) % colors.length] : '#f85149';
+        const isApp = entry.type === 'app';
+        const label = (isApp ? '🚀 ' : '') + entry.name;
+        html += `<div class="flex items-center h-5 mb-0.5 group" title="${entry.name} (${entry.agentId}) ${fmtMs(entry.end-entry.start)}${entry.cacheHit?' [cache]':''}">
+          <div class="shrink-0 text-xs truncate ${isApp?'font-bold text-accent':'text-muted'}" style="width:140px">${label}</div>
+          <div class="flex-1 relative h-4">
+            <div class="gantt-bar absolute h-full rounded-sm ${isApp?'h-5 -mt-0.5':''}" style="left:${left}%;width:${width}%;background:${color};opacity:${entry.cacheHit?0.5:0.85}"></div>
+          </div>
+        </div>`;
+      }
+      html += '</div>';
+      html += '<div class="flex flex-wrap gap-3 mt-3 text-xs">';
+      agents.forEach((a, i) => { html += `<span><span class="inline-block w-3 h-3 rounded-sm mr-1" style="background:${colors[i%colors.length]}"></span>${a}</span>`; });
+      html += '</div>';
+      el.innerHTML = html;
+    }).catch(() => {});
+  }).catch(() => {});
+}
+
+function renderGraph() {
+  const canvas = document.getElementById('graph-canvas');
+  const ctx = canvas.getContext('2d');
+  const filter = document.getElementById('graph-filter').value;
+
+  fetch(`${API}/graph-data`).then(r => r.json()).then(data => {
+    let { nodes, edges } = data;
+    if (filter !== 'all') {
+      const keep = new Set();
+      nodes.forEach(n => {
+        if (filter === 'shared' ? n.id.startsWith('shared-') : (n.id.startsWith(filter) || n.id.startsWith('shared-') || n.type === 'app' && n.id === filter)) keep.add(n.id);
+      });
+      // Add transitive deps
+      let changed = true;
+      while (changed) { changed = false; edges.forEach(e => { if (keep.has(e.to) && !keep.has(e.from)) { keep.add(e.from); changed = true; } }); }
+      nodes = nodes.filter(n => keep.has(n.id));
+      edges = edges.filter(e => keep.has(e.from) && keep.has(e.to));
+    }
+
+    canvas.width = canvas.offsetWidth * 2;
+    canvas.height = 500 * 2;
+    ctx.scale(2, 2);
+    ctx.clearRect(0, 0, canvas.offsetWidth, 500);
+
+    if (nodes.length === 0) { ctx.fillStyle = '#8b949e'; ctx.fillText('No data', 20, 30); return; }
+
+    // Simple force-directed layout
+    const pos = {};
+    const w = canvas.offsetWidth, h = 500;
+    nodes.forEach((n, i) => { pos[n.id] = { x: Math.random() * (w-40) + 20, y: Math.random() * (h-40) + 20 }; });
+
+    for (let iter = 0; iter < 100; iter++) {
+      // Repulsion
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i+1; j < nodes.length; j++) {
+          const a = pos[nodes[i].id], b = pos[nodes[j].id];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.max(1, Math.sqrt(dx*dx + dy*dy));
+          const f = 800 / (d * d);
+          a.x -= dx/d * f; a.y -= dy/d * f;
+          b.x += dx/d * f; b.y += dy/d * f;
+        }
+      }
+      // Attraction
+      edges.forEach(e => {
+        const a = pos[e.from], b = pos[e.to];
+        if (!a || !b) return;
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        const f = (d - 60) * 0.01;
+        a.x += dx/d * f; a.y += dy/d * f;
+        b.x -= dx/d * f; b.y -= dy/d * f;
+      });
+      // Bounds
+      nodes.forEach(n => { const p = pos[n.id]; p.x = Math.max(20, Math.min(w-20, p.x)); p.y = Math.max(20, Math.min(h-20, p.y)); });
+    }
+
+    // Draw edges
+    ctx.strokeStyle = '#30363d'; ctx.lineWidth = 0.5;
+    edges.forEach(e => {
+      const a = pos[e.from], b = pos[e.to];
+      if (!a || !b) return;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    });
+
+    // Draw nodes
+    const stateColors = { pending: '#8b949e', ready: '#d29922', running: '#58a6ff', done: '#3fb950', failed: '#f85149' };
+    nodes.forEach(n => {
+      const p = pos[n.id];
+      const r = n.type === 'app' ? 8 : 4;
+      ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, Math.PI*2);
+      ctx.fillStyle = stateColors[n.state] || '#8b949e'; ctx.fill();
+      if (n.type === 'app') { ctx.strokeStyle = '#58a6ff'; ctx.lineWidth = 2; ctx.stroke(); }
+      ctx.fillStyle = '#c9d1d9'; ctx.font = '9px monospace'; ctx.textAlign = 'center';
+      ctx.fillText(n.id.replace(/^(app\d-|shared-)/, ''), p.x, p.y + r + 10);
+    });
+  }).catch(() => {});
+}
+
+function renderHistory(runs) {
+  const el = document.getElementById('history-list');
+  if (!runs || runs.length === 0) { el.innerHTML = '<div class="text-muted">No builds yet</div>'; return; }
+  el.innerHTML = runs.map(r => {
+    const date = new Date(r.startTime).toLocaleString();
+    const duration = r.endTime ? fmtMs(r.endTime - r.startTime) : 'running';
+    const icon = r.status === 'done' ? '✅' : r.status === 'running' ? '🔨' : '❌';
+    return `<div class="flex items-center gap-3 p-2 rounded hover:bg-bg cursor-pointer" onclick="loadRun('${r.id}')">
+      <span>${icon}</span>
+      <span class="font-bold text-accent">${r.commitSha?.slice(0,8) || '?'}</span>
+      <span class="text-muted">${r.branch || '?'}</span>
+      <span class="text-xs text-muted">${r.libCount} libs · ${r.appCount} apps</span>
+      <span class="flex-1"></span>
+      <span class="text-xs text-muted">${duration}</span>
+      <span class="text-xs text-muted">${date}</span>
+    </div>`;
+  }).join('');
+}
+
+async function loadRun(id) {
+  try {
+    const r = await fetch(`${API}/runs/${id}`);
+    // TODO: show run details in modal
+    alert('Run: ' + id + '\nStatus: ' + (await r.json()).status);
+  } catch {}
+}
+
+function addLogLine(task, log) {
+  const filter = document.getElementById('log-filter').value;
+  if (filter !== 'all' && filter !== task) return;
+  const el = document.getElementById('log-stream');
+  const div = document.createElement('div');
+  div.className = 'log-entry';
+  div.innerHTML = `<span class="text-muted">[${task}]</span> ${escHtml(log)}`;
+  el.appendChild(div);
+  if (el.children.length > 500) el.removeChild(el.firstChild);
+  el.scrollTop = el.scrollHeight;
+}
+
+// --- Helpers ---
+function fmtMs(ms) {
+  if (!ms && ms !== 0) return '—';
+  const s = ms / 1000;
+  if (s >= 60) return Math.floor(s/60) + 'm' + Math.round(s%60) + 's';
+  return s.toFixed(1) + 's';
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.tab').forEach(el => { el.classList.remove('tab-active'); el.classList.add('text-muted'); });
+  document.getElementById('tab-' + name).classList.remove('hidden');
+  document.querySelector(`[data-tab="${name}"]`).classList.add('tab-active');
+  document.querySelector(`[data-tab="${name}"]`).classList.remove('text-muted');
+  if (name === 'history') fetchHistory();
+  if (name === 'graph') setTimeout(renderGraph, 100);
+  if (name === 'timeline') renderGantt();
+}
+
+// --- Timer ---
+setInterval(() => {
+  if (state.active && !state.allDone && state.elapsedMs) {
+    state.elapsedMs += 1000;
+    document.getElementById('elapsed').textContent = fmtMs(state.elapsedMs);
+  }
+}, 1000);
+
+// Boot
+connect();
+setInterval(() => { if (state.active && !state.allDone) fetchStatus(); }, 5000);
+</script>
+</body>
+</html>
