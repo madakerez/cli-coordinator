@@ -1,6 +1,6 @@
-import { ISharedUiItem1, SharedUiItem1Model, SharedUiItem1Status, SharedUiItem1Filter } from './shared-ui-item1.model';
-import { ISharedUiItem2, SharedUiItem2Model, SharedUiItem2Status, SharedUiItem2Filter } from './shared-ui-item2.model';
-import { ISharedUiItem3, SharedUiItem3Model, SharedUiItem3Status, SharedUiItem3Filter } from './shared-ui-item3.model';
+import type { ISharedUiItem1, SharedUiItem1Status } from './shared-ui-item1.model';
+import type { ISharedUiItem2, SharedUiItem2Status } from './shared-ui-item2.model';
+import type { ISharedUiItem3, SharedUiItem3Status } from './shared-ui-item3.model';
 
 export interface SharedUiSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedUiSvc1CacheEntry<T> {
 }
 
 export class SharedUiSvc1Service {
-  private cache = new Map<string, SharedUiSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedUiSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedUiSvc1ServiceConfig;
 
-  constructor(private config: SharedUiSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedUiSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedUiSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedUiSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

@@ -63,38 +63,27 @@ export interface IApp1FeatureCalendarItem6Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureCalendarItem6Model implements IApp1FeatureCalendarItem6 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureCalendarItem6Status = undefined as any;
-  enabled: App1FeatureCalendarItem6Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureCalendarItem6Status = undefined as any;
-  category: App1FeatureCalendarItem6Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
+export function createApp1FeatureCalendarItem6(data: Partial<IApp1FeatureCalendarItem6> = {}): IApp1FeatureCalendarItem6 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureCalendarItem6;
+}
 
-  constructor(data?: Partial<IApp1FeatureCalendarItem6>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureCalendarItem6(entity: IApp1FeatureCalendarItem6): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureCalendarItem6 {
-    return { ...this } as IApp1FeatureCalendarItem6;
-  }
-
-  clone(): App1FeatureCalendarItem6Model {
-    return new App1FeatureCalendarItem6Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureCalendarItem6(entity: IApp1FeatureCalendarItem6): IApp1FeatureCalendarItem6 {
+  return { ...entity };
 }

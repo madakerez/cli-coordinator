@@ -60,35 +60,27 @@ export interface ISharedCryptoItem3Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedCryptoItem3Model implements ISharedCryptoItem3 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedCryptoItem3Status = undefined as any;
-  enabled: SharedCryptoItem3Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedCryptoItem3Status = undefined as any;
+export function createSharedCryptoItem3(data: Partial<ISharedCryptoItem3> = {}): ISharedCryptoItem3 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedCryptoItem3;
+}
 
-  constructor(data?: Partial<ISharedCryptoItem3>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedCryptoItem3(entity: ISharedCryptoItem3): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedCryptoItem3 {
-    return { ...this } as ISharedCryptoItem3;
-  }
-
-  clone(): SharedCryptoItem3Model {
-    return new SharedCryptoItem3Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedCryptoItem3(entity: ISharedCryptoItem3): ISharedCryptoItem3 {
+  return { ...entity };
 }

@@ -58,33 +58,27 @@ export interface IApp4UtilParsersItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UtilParsersItem1Model implements IApp4UtilParsersItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UtilParsersItem1Status = undefined as any;
-  enabled: App4UtilParsersItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp4UtilParsersItem1(data: Partial<IApp4UtilParsersItem1> = {}): IApp4UtilParsersItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UtilParsersItem1;
+}
 
-  constructor(data?: Partial<IApp4UtilParsersItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UtilParsersItem1(entity: IApp4UtilParsersItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UtilParsersItem1 {
-    return { ...this } as IApp4UtilParsersItem1;
-  }
-
-  clone(): App4UtilParsersItem1Model {
-    return new App4UtilParsersItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UtilParsersItem1(entity: IApp4UtilParsersItem1): IApp4UtilParsersItem1 {
+  return { ...entity };
 }

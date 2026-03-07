@@ -61,36 +61,27 @@ export interface ISharedMetricsItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedMetricsItem4Model implements ISharedMetricsItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedMetricsItem4Status = undefined as any;
-  enabled: SharedMetricsItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedMetricsItem4Status = undefined as any;
-  category: SharedMetricsItem4Type = undefined as any;
+export function createSharedMetricsItem4(data: Partial<ISharedMetricsItem4> = {}): ISharedMetricsItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedMetricsItem4;
+}
 
-  constructor(data?: Partial<ISharedMetricsItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedMetricsItem4(entity: ISharedMetricsItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedMetricsItem4 {
-    return { ...this } as ISharedMetricsItem4;
-  }
-
-  clone(): SharedMetricsItem4Model {
-    return new SharedMetricsItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedMetricsItem4(entity: ISharedMetricsItem4): ISharedMetricsItem4 {
+  return { ...entity };
 }

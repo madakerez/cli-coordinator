@@ -1,6 +1,6 @@
-import { IApp4UiPanelsItem8, App4UiPanelsItem8Model, App4UiPanelsItem8Status, App4UiPanelsItem8Filter } from './app4-ui-panels-item8.model';
-import { IApp4UiPanelsItem9, App4UiPanelsItem9Model, App4UiPanelsItem9Status, App4UiPanelsItem9Filter } from './app4-ui-panels-item9.model';
-import { IApp4UiPanelsItem10, App4UiPanelsItem10Model, App4UiPanelsItem10Status, App4UiPanelsItem10Filter } from './app4-ui-panels-item10.model';
+import type { IApp4UiPanelsItem8, App4UiPanelsItem8Status } from './app4-ui-panels-item8.model';
+import type { IApp4UiPanelsItem9, App4UiPanelsItem9Status } from './app4-ui-panels-item9.model';
+import type { IApp4UiPanelsItem10, App4UiPanelsItem10Status } from './app4-ui-panels-item10.model';
 
 export interface App4UiPanelsSvc8ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4UiPanelsSvc8CacheEntry<T> {
 }
 
 export class App4UiPanelsSvc8Service {
-  private cache = new Map<string, App4UiPanelsSvc8CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4UiPanelsSvc8CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4UiPanelsSvc8ServiceConfig;
 
-  constructor(private config: App4UiPanelsSvc8ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4UiPanelsSvc8ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4UiPanelsSvc8Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4UiPanelsSvc8Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

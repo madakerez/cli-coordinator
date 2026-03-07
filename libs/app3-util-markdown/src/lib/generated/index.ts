@@ -18,3 +18,5 @@ export * from './app3-util-markdown-widget2.component';
 export * from './app3-util-markdown-widget3.component';
 export * from './app3-util-markdown-handler0.handler';
 export * from './app3-util-markdown-handler1.handler';
+export * from './app3-util-markdown-handler2.handler';
+export * from './app3-util-markdown-handler3.handler';

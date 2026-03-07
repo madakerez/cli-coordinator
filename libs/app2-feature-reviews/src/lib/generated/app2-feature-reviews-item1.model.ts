@@ -58,33 +58,27 @@ export interface IApp2FeatureReviewsItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2FeatureReviewsItem1Model implements IApp2FeatureReviewsItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2FeatureReviewsItem1Status = undefined as any;
-  enabled: App2FeatureReviewsItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp2FeatureReviewsItem1(data: Partial<IApp2FeatureReviewsItem1> = {}): IApp2FeatureReviewsItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2FeatureReviewsItem1;
+}
 
-  constructor(data?: Partial<IApp2FeatureReviewsItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2FeatureReviewsItem1(entity: IApp2FeatureReviewsItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2FeatureReviewsItem1 {
-    return { ...this } as IApp2FeatureReviewsItem1;
-  }
-
-  clone(): App2FeatureReviewsItem1Model {
-    return new App2FeatureReviewsItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2FeatureReviewsItem1(entity: IApp2FeatureReviewsItem1): IApp2FeatureReviewsItem1 {
+  return { ...entity };
 }

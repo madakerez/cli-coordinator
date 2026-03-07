@@ -1,6 +1,6 @@
-import { IApp3FeaturePreviewItem1, App3FeaturePreviewItem1Model, App3FeaturePreviewItem1Status, App3FeaturePreviewItem1Filter } from './app3-feature-preview-item1.model';
-import { IApp3FeaturePreviewItem2, App3FeaturePreviewItem2Model, App3FeaturePreviewItem2Status, App3FeaturePreviewItem2Filter } from './app3-feature-preview-item2.model';
-import { IApp3FeaturePreviewItem3, App3FeaturePreviewItem3Model, App3FeaturePreviewItem3Status, App3FeaturePreviewItem3Filter } from './app3-feature-preview-item3.model';
+import type { IApp3FeaturePreviewItem1, App3FeaturePreviewItem1Status } from './app3-feature-preview-item1.model';
+import type { IApp3FeaturePreviewItem2, App3FeaturePreviewItem2Status } from './app3-feature-preview-item2.model';
+import type { IApp3FeaturePreviewItem3, App3FeaturePreviewItem3Status } from './app3-feature-preview-item3.model';
 
 export interface App3FeaturePreviewSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeaturePreviewSvc1CacheEntry<T> {
 }
 
 export class App3FeaturePreviewSvc1Service {
-  private cache = new Map<string, App3FeaturePreviewSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeaturePreviewSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeaturePreviewSvc1ServiceConfig;
 
-  constructor(private config: App3FeaturePreviewSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeaturePreviewSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeaturePreviewSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeaturePreviewSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

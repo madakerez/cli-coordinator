@@ -66,41 +66,27 @@ export interface ISharedEventsItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedEventsItem9Model implements ISharedEventsItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedEventsItem9Status = undefined as any;
-  enabled: SharedEventsItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedEventsItem9Status = undefined as any;
-  category: SharedEventsItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedEventsItem9Status = undefined as any;
+export function createSharedEventsItem9(data: Partial<ISharedEventsItem9> = {}): ISharedEventsItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedEventsItem9;
+}
 
-  constructor(data?: Partial<ISharedEventsItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedEventsItem9(entity: ISharedEventsItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedEventsItem9 {
-    return { ...this } as ISharedEventsItem9;
-  }
-
-  clone(): SharedEventsItem9Model {
-    return new SharedEventsItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedEventsItem9(entity: ISharedEventsItem9): ISharedEventsItem9 {
+  return { ...entity };
 }

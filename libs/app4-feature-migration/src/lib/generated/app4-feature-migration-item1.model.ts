@@ -58,33 +58,27 @@ export interface IApp4FeatureMigrationItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureMigrationItem1Model implements IApp4FeatureMigrationItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureMigrationItem1Status = undefined as any;
-  enabled: App4FeatureMigrationItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp4FeatureMigrationItem1(data: Partial<IApp4FeatureMigrationItem1> = {}): IApp4FeatureMigrationItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureMigrationItem1;
+}
 
-  constructor(data?: Partial<IApp4FeatureMigrationItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureMigrationItem1(entity: IApp4FeatureMigrationItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureMigrationItem1 {
-    return { ...this } as IApp4FeatureMigrationItem1;
-  }
-
-  clone(): App4FeatureMigrationItem1Model {
-    return new App4FeatureMigrationItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureMigrationItem1(entity: IApp4FeatureMigrationItem1): IApp4FeatureMigrationItem1 {
+  return { ...entity };
 }

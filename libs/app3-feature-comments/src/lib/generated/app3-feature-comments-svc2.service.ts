@@ -1,6 +1,6 @@
-import { IApp3FeatureCommentsItem2, App3FeatureCommentsItem2Model, App3FeatureCommentsItem2Status, App3FeatureCommentsItem2Filter } from './app3-feature-comments-item2.model';
-import { IApp3FeatureCommentsItem3, App3FeatureCommentsItem3Model, App3FeatureCommentsItem3Status, App3FeatureCommentsItem3Filter } from './app3-feature-comments-item3.model';
-import { IApp3FeatureCommentsItem4, App3FeatureCommentsItem4Model, App3FeatureCommentsItem4Status, App3FeatureCommentsItem4Filter } from './app3-feature-comments-item4.model';
+import type { IApp3FeatureCommentsItem2, App3FeatureCommentsItem2Status } from './app3-feature-comments-item2.model';
+import type { IApp3FeatureCommentsItem3, App3FeatureCommentsItem3Status } from './app3-feature-comments-item3.model';
+import type { IApp3FeatureCommentsItem4, App3FeatureCommentsItem4Status } from './app3-feature-comments-item4.model';
 
 export interface App3FeatureCommentsSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeatureCommentsSvc2CacheEntry<T> {
 }
 
 export class App3FeatureCommentsSvc2Service {
-  private cache = new Map<string, App3FeatureCommentsSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeatureCommentsSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeatureCommentsSvc2ServiceConfig;
 
-  constructor(private config: App3FeatureCommentsSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeatureCommentsSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeatureCommentsSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeatureCommentsSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

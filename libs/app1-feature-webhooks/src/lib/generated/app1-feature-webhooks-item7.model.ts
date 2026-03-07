@@ -64,39 +64,27 @@ export interface IApp1FeatureWebhooksItem7Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureWebhooksItem7Model implements IApp1FeatureWebhooksItem7 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureWebhooksItem7Status = undefined as any;
-  enabled: App1FeatureWebhooksItem7Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureWebhooksItem7Status = undefined as any;
-  category: App1FeatureWebhooksItem7Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
+export function createApp1FeatureWebhooksItem7(data: Partial<IApp1FeatureWebhooksItem7> = {}): IApp1FeatureWebhooksItem7 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureWebhooksItem7;
+}
 
-  constructor(data?: Partial<IApp1FeatureWebhooksItem7>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureWebhooksItem7(entity: IApp1FeatureWebhooksItem7): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureWebhooksItem7 {
-    return { ...this } as IApp1FeatureWebhooksItem7;
-  }
-
-  clone(): App1FeatureWebhooksItem7Model {
-    return new App1FeatureWebhooksItem7Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureWebhooksItem7(entity: IApp1FeatureWebhooksItem7): IApp1FeatureWebhooksItem7 {
+  return { ...entity };
 }

@@ -66,41 +66,27 @@ export interface IApp4UiPanelsItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UiPanelsItem9Model implements IApp4UiPanelsItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UiPanelsItem9Status = undefined as any;
-  enabled: App4UiPanelsItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4UiPanelsItem9Status = undefined as any;
-  category: App4UiPanelsItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: App4UiPanelsItem9Status = undefined as any;
+export function createApp4UiPanelsItem9(data: Partial<IApp4UiPanelsItem9> = {}): IApp4UiPanelsItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UiPanelsItem9;
+}
 
-  constructor(data?: Partial<IApp4UiPanelsItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UiPanelsItem9(entity: IApp4UiPanelsItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UiPanelsItem9 {
-    return { ...this } as IApp4UiPanelsItem9;
-  }
-
-  clone(): App4UiPanelsItem9Model {
-    return new App4UiPanelsItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UiPanelsItem9(entity: IApp4UiPanelsItem9): IApp4UiPanelsItem9 {
+  return { ...entity };
 }

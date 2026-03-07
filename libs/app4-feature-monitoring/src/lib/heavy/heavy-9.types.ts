@@ -15,7 +15,7 @@ export type DeepPartialApp4FeatureMonitoringHeavy9<T> = {
     : T[P];
 };
 
-export type App4FeatureMonitoringHeavy9Nested = Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, T>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;
+export type App4FeatureMonitoringHeavy9Nested = Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, string>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>;
 
 export type App4FeatureMonitoringHeavy9Union =
   | { kind: 'App4FeatureMonitoringHeavy9_variant_0'; data_0: string; nested_0: { value: number; items: Array<{ id: string; meta: Record<string, unknown> }> }; timestamp: Date }
@@ -53,30 +53,30 @@ export type ExtractApp4FeatureMonitoringHeavy9Kind<T extends App4FeatureMonitori
 export type App4FeatureMonitoringHeavy9ByKind<K extends App4FeatureMonitoringHeavy9Union['kind']> = Extract<App4FeatureMonitoringHeavy9Union, { kind: K }>;
 
 export type App4FeatureMonitoringHeavy9MappedResult<T> = {
-    field0: T extends { field0: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field1: T extends { field1: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field2: T extends { field2: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field3: T extends { field3: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field4: T extends { field4: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field5: T extends { field5: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field6: T extends { field6: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field7: T extends { field7: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field8: T extends { field8: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field9: T extends { field9: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field10: T extends { field10: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field11: T extends { field11: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field12: T extends { field12: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field13: T extends { field13: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field14: T extends { field14: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field15: T extends { field15: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field16: T extends { field16: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field17: T extends { field17: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field18: T extends { field18: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field19: T extends { field19: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field20: T extends { field20: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field21: T extends { field21: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field22: T extends { field22: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field23: T extends { field23: infer U } ? U extends string ? Uppercase<U> : U : never;
+    field0: string;
+    field1: string;
+    field2: string;
+    field3: string;
+    field4: string;
+    field5: string;
+    field6: string;
+    field7: string;
+    field8: string;
+    field9: string;
+    field10: string;
+    field11: string;
+    field12: string;
+    field13: string;
+    field14: string;
+    field15: string;
+    field16: string;
+    field17: string;
+    field18: string;
+    field19: string;
+    field20: string;
+    field21: string;
+    field22: string;
+    field23: string;
 };
 
 export type App4FeatureMonitoringHeavy9Conditional<T, U> =

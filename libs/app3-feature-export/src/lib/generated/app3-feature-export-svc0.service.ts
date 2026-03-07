@@ -1,6 +1,6 @@
-import { IApp3FeatureExportItem0, App3FeatureExportItem0Model, App3FeatureExportItem0Status, App3FeatureExportItem0Filter } from './app3-feature-export-item0.model';
-import { IApp3FeatureExportItem1, App3FeatureExportItem1Model, App3FeatureExportItem1Status, App3FeatureExportItem1Filter } from './app3-feature-export-item1.model';
-import { IApp3FeatureExportItem2, App3FeatureExportItem2Model, App3FeatureExportItem2Status, App3FeatureExportItem2Filter } from './app3-feature-export-item2.model';
+import type { IApp3FeatureExportItem0, App3FeatureExportItem0Status } from './app3-feature-export-item0.model';
+import type { IApp3FeatureExportItem1, App3FeatureExportItem1Status } from './app3-feature-export-item1.model';
+import type { IApp3FeatureExportItem2, App3FeatureExportItem2Status } from './app3-feature-export-item2.model';
 
 export interface App3FeatureExportSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeatureExportSvc0CacheEntry<T> {
 }
 
 export class App3FeatureExportSvc0Service {
-  private cache = new Map<string, App3FeatureExportSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeatureExportSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeatureExportSvc0ServiceConfig;
 
-  constructor(private config: App3FeatureExportSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeatureExportSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeatureExportSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeatureExportSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

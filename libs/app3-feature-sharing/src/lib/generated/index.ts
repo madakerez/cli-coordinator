@@ -2,6 +2,7 @@ export * from './app3-feature-sharing-item0.model';
 export * from './app3-feature-sharing-item1.model';
 export * from './app3-feature-sharing-item2.model';
 export * from './app3-feature-sharing-item3.model';
+export * from './app3-feature-sharing-item4.model';
 export * from './app3-feature-sharing-svc0.service';
 export * from './app3-feature-sharing-svc1.service';
 export * from './app3-feature-sharing-svc2.service';

@@ -57,32 +57,27 @@ export interface IApp4DataAggregatorItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4DataAggregatorItem0Model implements IApp4DataAggregatorItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4DataAggregatorItem0Status = undefined as any;
-  enabled: App4DataAggregatorItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp4DataAggregatorItem0(data: Partial<IApp4DataAggregatorItem0> = {}): IApp4DataAggregatorItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4DataAggregatorItem0;
+}
 
-  constructor(data?: Partial<IApp4DataAggregatorItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4DataAggregatorItem0(entity: IApp4DataAggregatorItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4DataAggregatorItem0 {
-    return { ...this } as IApp4DataAggregatorItem0;
-  }
-
-  clone(): App4DataAggregatorItem0Model {
-    return new App4DataAggregatorItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4DataAggregatorItem0(entity: IApp4DataAggregatorItem0): IApp4DataAggregatorItem0 {
+  return { ...entity };
 }

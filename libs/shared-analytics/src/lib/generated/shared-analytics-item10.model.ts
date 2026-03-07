@@ -67,42 +67,27 @@ export interface ISharedAnalyticsItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedAnalyticsItem10Model implements ISharedAnalyticsItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedAnalyticsItem10Status = undefined as any;
-  enabled: SharedAnalyticsItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedAnalyticsItem10Status = undefined as any;
-  category: SharedAnalyticsItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedAnalyticsItem10Status = undefined as any;
-  status: SharedAnalyticsItem10Type = undefined as any;
+export function createSharedAnalyticsItem10(data: Partial<ISharedAnalyticsItem10> = {}): ISharedAnalyticsItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedAnalyticsItem10;
+}
 
-  constructor(data?: Partial<ISharedAnalyticsItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedAnalyticsItem10(entity: ISharedAnalyticsItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedAnalyticsItem10 {
-    return { ...this } as ISharedAnalyticsItem10;
-  }
-
-  clone(): SharedAnalyticsItem10Model {
-    return new SharedAnalyticsItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedAnalyticsItem10(entity: ISharedAnalyticsItem10): ISharedAnalyticsItem10 {
+  return { ...entity };
 }

@@ -62,37 +62,27 @@ export interface IApp4UiModalsItem5Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UiModalsItem5Model implements IApp4UiModalsItem5 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UiModalsItem5Status = undefined as any;
-  enabled: App4UiModalsItem5Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4UiModalsItem5Status = undefined as any;
-  category: App4UiModalsItem5Type = undefined as any;
-  tags: string = undefined as any;
+export function createApp4UiModalsItem5(data: Partial<IApp4UiModalsItem5> = {}): IApp4UiModalsItem5 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UiModalsItem5;
+}
 
-  constructor(data?: Partial<IApp4UiModalsItem5>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UiModalsItem5(entity: IApp4UiModalsItem5): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UiModalsItem5 {
-    return { ...this } as IApp4UiModalsItem5;
-  }
-
-  clone(): App4UiModalsItem5Model {
-    return new App4UiModalsItem5Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UiModalsItem5(entity: IApp4UiModalsItem5): IApp4UiModalsItem5 {
+  return { ...entity };
 }

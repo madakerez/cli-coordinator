@@ -15,5 +15,3 @@ export * from './app4-util-parsers-widget2.component';
 export * from './app4-util-parsers-handler0.handler';
 export * from './app4-util-parsers-handler1.handler';
 export * from './app4-util-parsers-handler2.handler';
-export * from './app4-util-parsers-handler3.handler';
-export * from './app4-util-parsers-handler4.handler';

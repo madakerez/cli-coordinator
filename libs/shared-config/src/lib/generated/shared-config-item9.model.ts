@@ -66,41 +66,27 @@ export interface ISharedConfigItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedConfigItem9Model implements ISharedConfigItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedConfigItem9Status = undefined as any;
-  enabled: SharedConfigItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedConfigItem9Status = undefined as any;
-  category: SharedConfigItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedConfigItem9Status = undefined as any;
+export function createSharedConfigItem9(data: Partial<ISharedConfigItem9> = {}): ISharedConfigItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedConfigItem9;
+}
 
-  constructor(data?: Partial<ISharedConfigItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedConfigItem9(entity: ISharedConfigItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedConfigItem9 {
-    return { ...this } as ISharedConfigItem9;
-  }
-
-  clone(): SharedConfigItem9Model {
-    return new SharedConfigItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedConfigItem9(entity: ISharedConfigItem9): ISharedConfigItem9 {
+  return { ...entity };
 }

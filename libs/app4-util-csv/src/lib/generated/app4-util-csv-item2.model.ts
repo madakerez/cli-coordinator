@@ -59,34 +59,27 @@ export interface IApp4UtilCsvItem2Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UtilCsvItem2Model implements IApp4UtilCsvItem2 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UtilCsvItem2Status = undefined as any;
-  enabled: App4UtilCsvItem2Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
+export function createApp4UtilCsvItem2(data: Partial<IApp4UtilCsvItem2> = {}): IApp4UtilCsvItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UtilCsvItem2;
+}
 
-  constructor(data?: Partial<IApp4UtilCsvItem2>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UtilCsvItem2(entity: IApp4UtilCsvItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UtilCsvItem2 {
-    return { ...this } as IApp4UtilCsvItem2;
-  }
-
-  clone(): App4UtilCsvItem2Model {
-    return new App4UtilCsvItem2Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UtilCsvItem2(entity: IApp4UtilCsvItem2): IApp4UtilCsvItem2 {
+  return { ...entity };
 }

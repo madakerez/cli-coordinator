@@ -8,3 +8,4 @@ export * from './app2-util-validators-util1.utils';
 export * from './app2-util-validators-widget0.component';
 export * from './app2-util-validators-widget1.component';
 export * from './app2-util-validators-handler0.handler';
+export * from './app2-util-validators-handler1.handler';

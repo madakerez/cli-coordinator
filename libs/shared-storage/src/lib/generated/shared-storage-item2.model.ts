@@ -59,34 +59,27 @@ export interface ISharedStorageItem2Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedStorageItem2Model implements ISharedStorageItem2 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedStorageItem2Status = undefined as any;
-  enabled: SharedStorageItem2Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
+export function createSharedStorageItem2(data: Partial<ISharedStorageItem2> = {}): ISharedStorageItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedStorageItem2;
+}
 
-  constructor(data?: Partial<ISharedStorageItem2>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedStorageItem2(entity: ISharedStorageItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedStorageItem2 {
-    return { ...this } as ISharedStorageItem2;
-  }
-
-  clone(): SharedStorageItem2Model {
-    return new SharedStorageItem2Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedStorageItem2(entity: ISharedStorageItem2): ISharedStorageItem2 {
+  return { ...entity };
 }

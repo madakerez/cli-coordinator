@@ -65,40 +65,27 @@ export interface ISharedAnalyticsItem8Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedAnalyticsItem8Model implements ISharedAnalyticsItem8 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedAnalyticsItem8Status = undefined as any;
-  enabled: SharedAnalyticsItem8Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedAnalyticsItem8Status = undefined as any;
-  category: SharedAnalyticsItem8Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
+export function createSharedAnalyticsItem8(data: Partial<ISharedAnalyticsItem8> = {}): ISharedAnalyticsItem8 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedAnalyticsItem8;
+}
 
-  constructor(data?: Partial<ISharedAnalyticsItem8>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedAnalyticsItem8(entity: ISharedAnalyticsItem8): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedAnalyticsItem8 {
-    return { ...this } as ISharedAnalyticsItem8;
-  }
-
-  clone(): SharedAnalyticsItem8Model {
-    return new SharedAnalyticsItem8Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedAnalyticsItem8(entity: ISharedAnalyticsItem8): ISharedAnalyticsItem8 {
+  return { ...entity };
 }

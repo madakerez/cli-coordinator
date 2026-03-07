@@ -1,6 +1,6 @@
-import { IApp1FeatureIntegrationsItem7, App1FeatureIntegrationsItem7Model, App1FeatureIntegrationsItem7Status, App1FeatureIntegrationsItem7Filter } from './app1-feature-integrations-item7.model';
-import { IApp1FeatureIntegrationsItem8, App1FeatureIntegrationsItem8Model, App1FeatureIntegrationsItem8Status, App1FeatureIntegrationsItem8Filter } from './app1-feature-integrations-item8.model';
-import { IApp1FeatureIntegrationsItem9, App1FeatureIntegrationsItem9Model, App1FeatureIntegrationsItem9Status, App1FeatureIntegrationsItem9Filter } from './app1-feature-integrations-item9.model';
+import type { IApp1FeatureIntegrationsItem7, App1FeatureIntegrationsItem7Status } from './app1-feature-integrations-item7.model';
+import type { IApp1FeatureIntegrationsItem8, App1FeatureIntegrationsItem8Status } from './app1-feature-integrations-item8.model';
+import type { IApp1FeatureIntegrationsItem9, App1FeatureIntegrationsItem9Status } from './app1-feature-integrations-item9.model';
 
 export interface App1FeatureIntegrationsSvc7ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1FeatureIntegrationsSvc7CacheEntry<T> {
 }
 
 export class App1FeatureIntegrationsSvc7Service {
-  private cache = new Map<string, App1FeatureIntegrationsSvc7CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1FeatureIntegrationsSvc7CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1FeatureIntegrationsSvc7ServiceConfig;
 
-  constructor(private config: App1FeatureIntegrationsSvc7ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1FeatureIntegrationsSvc7ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1FeatureIntegrationsSvc7Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1FeatureIntegrationsSvc7Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

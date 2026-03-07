@@ -57,32 +57,27 @@ export interface IApp2FeatureAnalyticsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2FeatureAnalyticsItem0Model implements IApp2FeatureAnalyticsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2FeatureAnalyticsItem0Status = undefined as any;
-  enabled: App2FeatureAnalyticsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp2FeatureAnalyticsItem0(data: Partial<IApp2FeatureAnalyticsItem0> = {}): IApp2FeatureAnalyticsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2FeatureAnalyticsItem0;
+}
 
-  constructor(data?: Partial<IApp2FeatureAnalyticsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2FeatureAnalyticsItem0(entity: IApp2FeatureAnalyticsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2FeatureAnalyticsItem0 {
-    return { ...this } as IApp2FeatureAnalyticsItem0;
-  }
-
-  clone(): App2FeatureAnalyticsItem0Model {
-    return new App2FeatureAnalyticsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2FeatureAnalyticsItem0(entity: IApp2FeatureAnalyticsItem0): IApp2FeatureAnalyticsItem0 {
+  return { ...entity };
 }

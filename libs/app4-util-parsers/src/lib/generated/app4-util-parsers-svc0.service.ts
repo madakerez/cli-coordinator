@@ -1,6 +1,6 @@
-import { IApp4UtilParsersItem0, App4UtilParsersItem0Model, App4UtilParsersItem0Status, App4UtilParsersItem0Filter } from './app4-util-parsers-item0.model';
-import { IApp4UtilParsersItem1, App4UtilParsersItem1Model, App4UtilParsersItem1Status, App4UtilParsersItem1Filter } from './app4-util-parsers-item1.model';
-import { IApp4UtilParsersItem2, App4UtilParsersItem2Model, App4UtilParsersItem2Status, App4UtilParsersItem2Filter } from './app4-util-parsers-item2.model';
+import type { IApp4UtilParsersItem0, App4UtilParsersItem0Status } from './app4-util-parsers-item0.model';
+import type { IApp4UtilParsersItem1, App4UtilParsersItem1Status } from './app4-util-parsers-item1.model';
+import type { IApp4UtilParsersItem2, App4UtilParsersItem2Status } from './app4-util-parsers-item2.model';
 
 export interface App4UtilParsersSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4UtilParsersSvc0CacheEntry<T> {
 }
 
 export class App4UtilParsersSvc0Service {
-  private cache = new Map<string, App4UtilParsersSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4UtilParsersSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4UtilParsersSvc0ServiceConfig;
 
-  constructor(private config: App4UtilParsersSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4UtilParsersSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4UtilParsersSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4UtilParsersSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

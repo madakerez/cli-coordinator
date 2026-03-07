@@ -1,6 +1,7 @@
 export * from './app2-ui-cards-item0.model';
 export * from './app2-ui-cards-item1.model';
 export * from './app2-ui-cards-item2.model';
+export * from './app2-ui-cards-item3.model';
 export * from './app2-ui-cards-svc0.service';
 export * from './app2-ui-cards-svc1.service';
 export * from './app2-ui-cards-util0.utils';
@@ -9,3 +10,5 @@ export * from './app2-ui-cards-widget0.component';
 export * from './app2-ui-cards-widget1.component';
 export * from './app2-ui-cards-handler0.handler';
 export * from './app2-ui-cards-handler1.handler';
+export * from './app2-ui-cards-handler2.handler';
+export * from './app2-ui-cards-handler3.handler';

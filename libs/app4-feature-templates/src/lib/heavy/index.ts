@@ -17,3 +17,6 @@ export * from './heavy-15.types';
 export * from './heavy-16.types';
 export * from './heavy-17.types';
 export * from './heavy-18.types';
+export * from './heavy-19.types';
+export * from './heavy-20.types';
+export * from './heavy-21.types';

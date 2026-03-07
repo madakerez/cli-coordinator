@@ -1,6 +1,6 @@
-import { IApp3FeatureCollaborationItem1, App3FeatureCollaborationItem1Model, App3FeatureCollaborationItem1Status, App3FeatureCollaborationItem1Filter } from './app3-feature-collaboration-item1.model';
-import { IApp3FeatureCollaborationItem2, App3FeatureCollaborationItem2Model, App3FeatureCollaborationItem2Status, App3FeatureCollaborationItem2Filter } from './app3-feature-collaboration-item2.model';
-import { IApp3FeatureCollaborationItem3, App3FeatureCollaborationItem3Model, App3FeatureCollaborationItem3Status, App3FeatureCollaborationItem3Filter } from './app3-feature-collaboration-item3.model';
+import type { IApp3FeatureCollaborationItem1, App3FeatureCollaborationItem1Status } from './app3-feature-collaboration-item1.model';
+import type { IApp3FeatureCollaborationItem2, App3FeatureCollaborationItem2Status } from './app3-feature-collaboration-item2.model';
+import type { IApp3FeatureCollaborationItem3, App3FeatureCollaborationItem3Status } from './app3-feature-collaboration-item3.model';
 
 export interface App3FeatureCollaborationSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeatureCollaborationSvc1CacheEntry<T> {
 }
 
 export class App3FeatureCollaborationSvc1Service {
-  private cache = new Map<string, App3FeatureCollaborationSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeatureCollaborationSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeatureCollaborationSvc1ServiceConfig;
 
-  constructor(private config: App3FeatureCollaborationSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeatureCollaborationSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeatureCollaborationSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeatureCollaborationSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

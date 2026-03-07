@@ -64,39 +64,27 @@ export interface IApp1FeatureHomeItem7Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureHomeItem7Model implements IApp1FeatureHomeItem7 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureHomeItem7Status = undefined as any;
-  enabled: App1FeatureHomeItem7Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureHomeItem7Status = undefined as any;
-  category: App1FeatureHomeItem7Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
+export function createApp1FeatureHomeItem7(data: Partial<IApp1FeatureHomeItem7> = {}): IApp1FeatureHomeItem7 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureHomeItem7;
+}
 
-  constructor(data?: Partial<IApp1FeatureHomeItem7>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureHomeItem7(entity: IApp1FeatureHomeItem7): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureHomeItem7 {
-    return { ...this } as IApp1FeatureHomeItem7;
-  }
-
-  clone(): App1FeatureHomeItem7Model {
-    return new App1FeatureHomeItem7Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureHomeItem7(entity: IApp1FeatureHomeItem7): IApp1FeatureHomeItem7 {
+  return { ...entity };
 }

@@ -15,4 +15,3 @@ export * from './app1-util-math-widget2.component';
 export * from './app1-util-math-handler0.handler';
 export * from './app1-util-math-handler1.handler';
 export * from './app1-util-math-handler2.handler';
-export * from './app1-util-math-handler3.handler';

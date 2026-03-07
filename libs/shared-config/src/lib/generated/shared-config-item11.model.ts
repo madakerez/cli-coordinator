@@ -68,43 +68,27 @@ export interface ISharedConfigItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedConfigItem11Model implements ISharedConfigItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedConfigItem11Status = undefined as any;
-  enabled: SharedConfigItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedConfigItem11Status = undefined as any;
-  category: SharedConfigItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedConfigItem11Status = undefined as any;
-  status: SharedConfigItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedConfigItem11(data: Partial<ISharedConfigItem11> = {}): ISharedConfigItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedConfigItem11;
+}
 
-  constructor(data?: Partial<ISharedConfigItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedConfigItem11(entity: ISharedConfigItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedConfigItem11 {
-    return { ...this } as ISharedConfigItem11;
-  }
-
-  clone(): SharedConfigItem11Model {
-    return new SharedConfigItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedConfigItem11(entity: ISharedConfigItem11): ISharedConfigItem11 {
+  return { ...entity };
 }

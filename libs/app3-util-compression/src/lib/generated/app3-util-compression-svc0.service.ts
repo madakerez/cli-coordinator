@@ -1,6 +1,6 @@
-import { IApp3UtilCompressionItem0, App3UtilCompressionItem0Model, App3UtilCompressionItem0Status, App3UtilCompressionItem0Filter } from './app3-util-compression-item0.model';
-import { IApp3UtilCompressionItem1, App3UtilCompressionItem1Model, App3UtilCompressionItem1Status, App3UtilCompressionItem1Filter } from './app3-util-compression-item1.model';
-import { IApp3UtilCompressionItem2, App3UtilCompressionItem2Model, App3UtilCompressionItem2Status, App3UtilCompressionItem2Filter } from './app3-util-compression-item2.model';
+import type { IApp3UtilCompressionItem0, App3UtilCompressionItem0Status } from './app3-util-compression-item0.model';
+import type { IApp3UtilCompressionItem1, App3UtilCompressionItem1Status } from './app3-util-compression-item1.model';
+import type { IApp3UtilCompressionItem2, App3UtilCompressionItem2Status } from './app3-util-compression-item2.model';
 
 export interface App3UtilCompressionSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3UtilCompressionSvc0CacheEntry<T> {
 }
 
 export class App3UtilCompressionSvc0Service {
-  private cache = new Map<string, App3UtilCompressionSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3UtilCompressionSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3UtilCompressionSvc0ServiceConfig;
 
-  constructor(private config: App3UtilCompressionSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3UtilCompressionSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3UtilCompressionSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3UtilCompressionSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

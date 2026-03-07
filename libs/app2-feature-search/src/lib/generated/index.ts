@@ -10,4 +10,3 @@ export * from './app2-feature-search-widget1.component';
 export * from './app2-feature-search-handler0.handler';
 export * from './app2-feature-search-handler1.handler';
 export * from './app2-feature-search-handler2.handler';
-export * from './app2-feature-search-handler3.handler';

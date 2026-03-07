@@ -60,35 +60,27 @@ export interface IApp1DataSyncItem3Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1DataSyncItem3Model implements IApp1DataSyncItem3 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1DataSyncItem3Status = undefined as any;
-  enabled: App1DataSyncItem3Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1DataSyncItem3Status = undefined as any;
+export function createApp1DataSyncItem3(data: Partial<IApp1DataSyncItem3> = {}): IApp1DataSyncItem3 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1DataSyncItem3;
+}
 
-  constructor(data?: Partial<IApp1DataSyncItem3>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1DataSyncItem3(entity: IApp1DataSyncItem3): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1DataSyncItem3 {
-    return { ...this } as IApp1DataSyncItem3;
-  }
-
-  clone(): App1DataSyncItem3Model {
-    return new App1DataSyncItem3Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1DataSyncItem3(entity: IApp1DataSyncItem3): IApp1DataSyncItem3 {
+  return { ...entity };
 }

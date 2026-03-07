@@ -66,41 +66,27 @@ export interface ISharedStorageItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedStorageItem9Model implements ISharedStorageItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedStorageItem9Status = undefined as any;
-  enabled: SharedStorageItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedStorageItem9Status = undefined as any;
-  category: SharedStorageItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedStorageItem9Status = undefined as any;
+export function createSharedStorageItem9(data: Partial<ISharedStorageItem9> = {}): ISharedStorageItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedStorageItem9;
+}
 
-  constructor(data?: Partial<ISharedStorageItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedStorageItem9(entity: ISharedStorageItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedStorageItem9 {
-    return { ...this } as ISharedStorageItem9;
-  }
-
-  clone(): SharedStorageItem9Model {
-    return new SharedStorageItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedStorageItem9(entity: ISharedStorageItem9): ISharedStorageItem9 {
+  return { ...entity };
 }

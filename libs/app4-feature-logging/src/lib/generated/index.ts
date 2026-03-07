@@ -28,5 +28,3 @@ export * from './app4-feature-logging-widget5.component';
 export * from './app4-feature-logging-handler0.handler';
 export * from './app4-feature-logging-handler1.handler';
 export * from './app4-feature-logging-handler2.handler';
-export * from './app4-feature-logging-handler3.handler';
-export * from './app4-feature-logging-handler4.handler';

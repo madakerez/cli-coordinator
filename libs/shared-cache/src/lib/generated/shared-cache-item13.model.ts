@@ -58,33 +58,27 @@ export interface ISharedCacheItem13Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedCacheItem13Model implements ISharedCacheItem13 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedCacheItem13Status = undefined as any;
-  enabled: SharedCacheItem13Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createSharedCacheItem13(data: Partial<ISharedCacheItem13> = {}): ISharedCacheItem13 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedCacheItem13;
+}
 
-  constructor(data?: Partial<ISharedCacheItem13>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedCacheItem13(entity: ISharedCacheItem13): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedCacheItem13 {
-    return { ...this } as ISharedCacheItem13;
-  }
-
-  clone(): SharedCacheItem13Model {
-    return new SharedCacheItem13Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedCacheItem13(entity: ISharedCacheItem13): ISharedCacheItem13 {
+  return { ...entity };
 }

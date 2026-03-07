@@ -8,4 +8,3 @@ export * from './app2-ui-components-util1.utils';
 export * from './app2-ui-components-widget0.component';
 export * from './app2-ui-components-widget1.component';
 export * from './app2-ui-components-handler0.handler';
-export * from './app2-ui-components-handler1.handler';

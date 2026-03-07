@@ -59,4 +59,3 @@ export * from './app1-feature-files-handler3.handler';
 export * from './app1-feature-files-handler4.handler';
 export * from './app1-feature-files-handler5.handler';
 export * from './app1-feature-files-handler6.handler';
-export * from './app1-feature-files-handler7.handler';

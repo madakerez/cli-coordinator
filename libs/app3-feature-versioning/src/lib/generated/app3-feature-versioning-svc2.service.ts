@@ -1,6 +1,6 @@
-import { IApp3FeatureVersioningItem2, App3FeatureVersioningItem2Model, App3FeatureVersioningItem2Status, App3FeatureVersioningItem2Filter } from './app3-feature-versioning-item2.model';
-import { IApp3FeatureVersioningItem3, App3FeatureVersioningItem3Model, App3FeatureVersioningItem3Status, App3FeatureVersioningItem3Filter } from './app3-feature-versioning-item3.model';
-import { IApp3FeatureVersioningItem4, App3FeatureVersioningItem4Model, App3FeatureVersioningItem4Status, App3FeatureVersioningItem4Filter } from './app3-feature-versioning-item4.model';
+import type { IApp3FeatureVersioningItem2, App3FeatureVersioningItem2Status } from './app3-feature-versioning-item2.model';
+import type { IApp3FeatureVersioningItem3, App3FeatureVersioningItem3Status } from './app3-feature-versioning-item3.model';
+import type { IApp3FeatureVersioningItem4, App3FeatureVersioningItem4Status } from './app3-feature-versioning-item4.model';
 
 export interface App3FeatureVersioningSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeatureVersioningSvc2CacheEntry<T> {
 }
 
 export class App3FeatureVersioningSvc2Service {
-  private cache = new Map<string, App3FeatureVersioningSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeatureVersioningSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeatureVersioningSvc2ServiceConfig;
 
-  constructor(private config: App3FeatureVersioningSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeatureVersioningSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeatureVersioningSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeatureVersioningSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

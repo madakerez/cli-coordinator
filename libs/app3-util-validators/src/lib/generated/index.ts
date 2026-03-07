@@ -15,3 +15,4 @@ export * from './app3-util-validators-widget2.component';
 export * from './app3-util-validators-handler0.handler';
 export * from './app3-util-validators-handler1.handler';
 export * from './app3-util-validators-handler2.handler';
+export * from './app3-util-validators-handler3.handler';

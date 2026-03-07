@@ -67,42 +67,27 @@ export interface ISharedAuthItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedAuthItem10Model implements ISharedAuthItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedAuthItem10Status = undefined as any;
-  enabled: SharedAuthItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedAuthItem10Status = undefined as any;
-  category: SharedAuthItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedAuthItem10Status = undefined as any;
-  status: SharedAuthItem10Type = undefined as any;
+export function createSharedAuthItem10(data: Partial<ISharedAuthItem10> = {}): ISharedAuthItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedAuthItem10;
+}
 
-  constructor(data?: Partial<ISharedAuthItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedAuthItem10(entity: ISharedAuthItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedAuthItem10 {
-    return { ...this } as ISharedAuthItem10;
-  }
-
-  clone(): SharedAuthItem10Model {
-    return new SharedAuthItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedAuthItem10(entity: ISharedAuthItem10): ISharedAuthItem10 {
+  return { ...entity };
 }

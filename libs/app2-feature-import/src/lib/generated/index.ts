@@ -1,7 +1,6 @@
 export * from './app2-feature-import-item0.model';
 export * from './app2-feature-import-item1.model';
 export * from './app2-feature-import-item2.model';
-export * from './app2-feature-import-item3.model';
 export * from './app2-feature-import-svc0.service';
 export * from './app2-feature-import-svc1.service';
 export * from './app2-feature-import-util0.utils';

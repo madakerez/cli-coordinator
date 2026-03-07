@@ -16,4 +16,3 @@ export * from './app3-ui-tree-handler0.handler';
 export * from './app3-ui-tree-handler1.handler';
 export * from './app3-ui-tree-handler2.handler';
 export * from './app3-ui-tree-handler3.handler';
-export * from './app3-ui-tree-handler4.handler';

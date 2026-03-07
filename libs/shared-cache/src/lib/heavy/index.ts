@@ -33,4 +33,3 @@ export * from './heavy-31.types';
 export * from './heavy-32.types';
 export * from './heavy-33.types';
 export * from './heavy-34.types';
-export * from './heavy-35.types';

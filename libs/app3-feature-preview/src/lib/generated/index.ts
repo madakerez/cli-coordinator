@@ -18,5 +18,3 @@ export * from './app3-feature-preview-widget2.component';
 export * from './app3-feature-preview-widget3.component';
 export * from './app3-feature-preview-handler0.handler';
 export * from './app3-feature-preview-handler1.handler';
-export * from './app3-feature-preview-handler2.handler';
-export * from './app3-feature-preview-handler3.handler';

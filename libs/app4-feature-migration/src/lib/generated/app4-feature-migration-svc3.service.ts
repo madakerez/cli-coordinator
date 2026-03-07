@@ -1,6 +1,6 @@
-import { IApp4FeatureMigrationItem3, App4FeatureMigrationItem3Model, App4FeatureMigrationItem3Status, App4FeatureMigrationItem3Filter } from './app4-feature-migration-item3.model';
-import { IApp4FeatureMigrationItem4, App4FeatureMigrationItem4Model, App4FeatureMigrationItem4Status, App4FeatureMigrationItem4Filter } from './app4-feature-migration-item4.model';
-import { IApp4FeatureMigrationItem5, App4FeatureMigrationItem5Model, App4FeatureMigrationItem5Status, App4FeatureMigrationItem5Filter } from './app4-feature-migration-item5.model';
+import type { IApp4FeatureMigrationItem3, App4FeatureMigrationItem3Status } from './app4-feature-migration-item3.model';
+import type { IApp4FeatureMigrationItem4, App4FeatureMigrationItem4Status } from './app4-feature-migration-item4.model';
+import type { IApp4FeatureMigrationItem5, App4FeatureMigrationItem5Status } from './app4-feature-migration-item5.model';
 
 export interface App4FeatureMigrationSvc3ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureMigrationSvc3CacheEntry<T> {
 }
 
 export class App4FeatureMigrationSvc3Service {
-  private cache = new Map<string, App4FeatureMigrationSvc3CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureMigrationSvc3CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureMigrationSvc3ServiceConfig;
 
-  constructor(private config: App4FeatureMigrationSvc3ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureMigrationSvc3ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureMigrationSvc3Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureMigrationSvc3Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

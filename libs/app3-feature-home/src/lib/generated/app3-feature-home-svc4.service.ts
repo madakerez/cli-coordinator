@@ -1,6 +1,6 @@
-import { IApp3FeatureHomeItem4, App3FeatureHomeItem4Model, App3FeatureHomeItem4Status, App3FeatureHomeItem4Filter } from './app3-feature-home-item4.model';
-import { IApp3FeatureHomeItem5, App3FeatureHomeItem5Model, App3FeatureHomeItem5Status, App3FeatureHomeItem5Filter } from './app3-feature-home-item5.model';
-import { IApp3FeatureHomeItem6, App3FeatureHomeItem6Model, App3FeatureHomeItem6Status, App3FeatureHomeItem6Filter } from './app3-feature-home-item6.model';
+import type { IApp3FeatureHomeItem4, App3FeatureHomeItem4Status } from './app3-feature-home-item4.model';
+import type { IApp3FeatureHomeItem5, App3FeatureHomeItem5Status } from './app3-feature-home-item5.model';
+import type { IApp3FeatureHomeItem6, App3FeatureHomeItem6Status } from './app3-feature-home-item6.model';
 
 export interface App3FeatureHomeSvc4ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3FeatureHomeSvc4CacheEntry<T> {
 }
 
 export class App3FeatureHomeSvc4Service {
-  private cache = new Map<string, App3FeatureHomeSvc4CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3FeatureHomeSvc4CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3FeatureHomeSvc4ServiceConfig;
 
-  constructor(private config: App3FeatureHomeSvc4ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3FeatureHomeSvc4ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3FeatureHomeSvc4Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3FeatureHomeSvc4Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

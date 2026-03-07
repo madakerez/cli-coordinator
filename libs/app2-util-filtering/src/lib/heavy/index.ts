@@ -6,6 +6,3 @@ export * from './heavy-4.types';
 export * from './heavy-5.types';
 export * from './heavy-6.types';
 export * from './heavy-7.types';
-export * from './heavy-8.types';
-export * from './heavy-9.types';
-export * from './heavy-10.types';

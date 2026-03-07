@@ -68,43 +68,27 @@ export interface IApp1FeatureTagsItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureTagsItem11Model implements IApp1FeatureTagsItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureTagsItem11Status = undefined as any;
-  enabled: App1FeatureTagsItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureTagsItem11Status = undefined as any;
-  category: App1FeatureTagsItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: App1FeatureTagsItem11Status = undefined as any;
-  status: App1FeatureTagsItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createApp1FeatureTagsItem11(data: Partial<IApp1FeatureTagsItem11> = {}): IApp1FeatureTagsItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureTagsItem11;
+}
 
-  constructor(data?: Partial<IApp1FeatureTagsItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureTagsItem11(entity: IApp1FeatureTagsItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureTagsItem11 {
-    return { ...this } as IApp1FeatureTagsItem11;
-  }
-
-  clone(): App1FeatureTagsItem11Model {
-    return new App1FeatureTagsItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureTagsItem11(entity: IApp1FeatureTagsItem11): IApp1FeatureTagsItem11 {
+  return { ...entity };
 }

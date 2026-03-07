@@ -1,7 +1,6 @@
 export * from './app3-data-sync-item0.model';
 export * from './app3-data-sync-item1.model';
 export * from './app3-data-sync-item2.model';
-export * from './app3-data-sync-item3.model';
 export * from './app3-data-sync-svc0.service';
 export * from './app3-data-sync-svc1.service';
 export * from './app3-data-sync-util0.utils';

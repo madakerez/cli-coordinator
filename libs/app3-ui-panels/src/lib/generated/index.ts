@@ -19,3 +19,4 @@ export * from './app3-ui-panels-widget3.component';
 export * from './app3-ui-panels-handler0.handler';
 export * from './app3-ui-panels-handler1.handler';
 export * from './app3-ui-panels-handler2.handler';
+export * from './app3-ui-panels-handler3.handler';

@@ -65,40 +65,27 @@ export interface IApp4FeatureRolesItem8Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureRolesItem8Model implements IApp4FeatureRolesItem8 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureRolesItem8Status = undefined as any;
-  enabled: App4FeatureRolesItem8Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4FeatureRolesItem8Status = undefined as any;
-  category: App4FeatureRolesItem8Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
+export function createApp4FeatureRolesItem8(data: Partial<IApp4FeatureRolesItem8> = {}): IApp4FeatureRolesItem8 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureRolesItem8;
+}
 
-  constructor(data?: Partial<IApp4FeatureRolesItem8>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureRolesItem8(entity: IApp4FeatureRolesItem8): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureRolesItem8 {
-    return { ...this } as IApp4FeatureRolesItem8;
-  }
-
-  clone(): App4FeatureRolesItem8Model {
-    return new App4FeatureRolesItem8Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureRolesItem8(entity: IApp4FeatureRolesItem8): IApp4FeatureRolesItem8 {
+  return { ...entity };
 }

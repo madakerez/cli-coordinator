@@ -1,6 +1,6 @@
-import { IApp3UtilMarkdownItem0, App3UtilMarkdownItem0Model, App3UtilMarkdownItem0Status, App3UtilMarkdownItem0Filter } from './app3-util-markdown-item0.model';
-import { IApp3UtilMarkdownItem1, App3UtilMarkdownItem1Model, App3UtilMarkdownItem1Status, App3UtilMarkdownItem1Filter } from './app3-util-markdown-item1.model';
-import { IApp3UtilMarkdownItem2, App3UtilMarkdownItem2Model, App3UtilMarkdownItem2Status, App3UtilMarkdownItem2Filter } from './app3-util-markdown-item2.model';
+import type { IApp3UtilMarkdownItem0, App3UtilMarkdownItem0Status } from './app3-util-markdown-item0.model';
+import type { IApp3UtilMarkdownItem1, App3UtilMarkdownItem1Status } from './app3-util-markdown-item1.model';
+import type { IApp3UtilMarkdownItem2, App3UtilMarkdownItem2Status } from './app3-util-markdown-item2.model';
 
 export interface App3UtilMarkdownSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App3UtilMarkdownSvc0CacheEntry<T> {
 }
 
 export class App3UtilMarkdownSvc0Service {
-  private cache = new Map<string, App3UtilMarkdownSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3UtilMarkdownSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3UtilMarkdownSvc0ServiceConfig;
 
-  constructor(private config: App3UtilMarkdownSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3UtilMarkdownSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App3UtilMarkdownSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App3UtilMarkdownSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

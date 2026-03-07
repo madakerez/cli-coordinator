@@ -61,36 +61,27 @@ export interface IApp3FeatureVersioningItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureVersioningItem4Model implements IApp3FeatureVersioningItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureVersioningItem4Status = undefined as any;
-  enabled: App3FeatureVersioningItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureVersioningItem4Status = undefined as any;
-  category: App3FeatureVersioningItem4Type = undefined as any;
+export function createApp3FeatureVersioningItem4(data: Partial<IApp3FeatureVersioningItem4> = {}): IApp3FeatureVersioningItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureVersioningItem4;
+}
 
-  constructor(data?: Partial<IApp3FeatureVersioningItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureVersioningItem4(entity: IApp3FeatureVersioningItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureVersioningItem4 {
-    return { ...this } as IApp3FeatureVersioningItem4;
-  }
-
-  clone(): App3FeatureVersioningItem4Model {
-    return new App3FeatureVersioningItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureVersioningItem4(entity: IApp3FeatureVersioningItem4): IApp3FeatureVersioningItem4 {
+  return { ...entity };
 }

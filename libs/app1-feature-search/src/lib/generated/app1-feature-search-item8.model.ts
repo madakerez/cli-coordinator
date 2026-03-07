@@ -65,40 +65,27 @@ export interface IApp1FeatureSearchItem8Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureSearchItem8Model implements IApp1FeatureSearchItem8 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureSearchItem8Status = undefined as any;
-  enabled: App1FeatureSearchItem8Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureSearchItem8Status = undefined as any;
-  category: App1FeatureSearchItem8Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
+export function createApp1FeatureSearchItem8(data: Partial<IApp1FeatureSearchItem8> = {}): IApp1FeatureSearchItem8 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureSearchItem8;
+}
 
-  constructor(data?: Partial<IApp1FeatureSearchItem8>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureSearchItem8(entity: IApp1FeatureSearchItem8): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureSearchItem8 {
-    return { ...this } as IApp1FeatureSearchItem8;
-  }
-
-  clone(): App1FeatureSearchItem8Model {
-    return new App1FeatureSearchItem8Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureSearchItem8(entity: IApp1FeatureSearchItem8): IApp1FeatureSearchItem8 {
+  return { ...entity };
 }

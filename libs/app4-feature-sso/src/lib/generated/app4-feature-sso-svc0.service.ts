@@ -1,6 +1,6 @@
-import { IApp4FeatureSsoItem0, App4FeatureSsoItem0Model, App4FeatureSsoItem0Status, App4FeatureSsoItem0Filter } from './app4-feature-sso-item0.model';
-import { IApp4FeatureSsoItem1, App4FeatureSsoItem1Model, App4FeatureSsoItem1Status, App4FeatureSsoItem1Filter } from './app4-feature-sso-item1.model';
-import { IApp4FeatureSsoItem2, App4FeatureSsoItem2Model, App4FeatureSsoItem2Status, App4FeatureSsoItem2Filter } from './app4-feature-sso-item2.model';
+import type { IApp4FeatureSsoItem0, App4FeatureSsoItem0Status } from './app4-feature-sso-item0.model';
+import type { IApp4FeatureSsoItem1, App4FeatureSsoItem1Status } from './app4-feature-sso-item1.model';
+import type { IApp4FeatureSsoItem2, App4FeatureSsoItem2Status } from './app4-feature-sso-item2.model';
 
 export interface App4FeatureSsoSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureSsoSvc0CacheEntry<T> {
 }
 
 export class App4FeatureSsoSvc0Service {
-  private cache = new Map<string, App4FeatureSsoSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureSsoSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureSsoSvc0ServiceConfig;
 
-  constructor(private config: App4FeatureSsoSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureSsoSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureSsoSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureSsoSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

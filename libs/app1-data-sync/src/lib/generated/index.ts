@@ -18,3 +18,5 @@ export * from './app1-data-sync-widget2.component';
 export * from './app1-data-sync-widget3.component';
 export * from './app1-data-sync-handler0.handler';
 export * from './app1-data-sync-handler1.handler';
+export * from './app1-data-sync-handler2.handler';
+export * from './app1-data-sync-handler3.handler';

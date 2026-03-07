@@ -1,6 +1,6 @@
-import { IApp4FeatureBillingItem4, App4FeatureBillingItem4Model, App4FeatureBillingItem4Status, App4FeatureBillingItem4Filter } from './app4-feature-billing-item4.model';
-import { IApp4FeatureBillingItem5, App4FeatureBillingItem5Model, App4FeatureBillingItem5Status, App4FeatureBillingItem5Filter } from './app4-feature-billing-item5.model';
-import { IApp4FeatureBillingItem6, App4FeatureBillingItem6Model, App4FeatureBillingItem6Status, App4FeatureBillingItem6Filter } from './app4-feature-billing-item6.model';
+import type { IApp4FeatureBillingItem4, App4FeatureBillingItem4Status } from './app4-feature-billing-item4.model';
+import type { IApp4FeatureBillingItem5, App4FeatureBillingItem5Status } from './app4-feature-billing-item5.model';
+import type { IApp4FeatureBillingItem6, App4FeatureBillingItem6Status } from './app4-feature-billing-item6.model';
 
 export interface App4FeatureBillingSvc4ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureBillingSvc4CacheEntry<T> {
 }
 
 export class App4FeatureBillingSvc4Service {
-  private cache = new Map<string, App4FeatureBillingSvc4CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureBillingSvc4CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureBillingSvc4ServiceConfig;
 
-  constructor(private config: App4FeatureBillingSvc4ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureBillingSvc4ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureBillingSvc4Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureBillingSvc4Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

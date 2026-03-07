@@ -1,6 +1,6 @@
-import { IApp4FeatureAlertsItem2, App4FeatureAlertsItem2Model, App4FeatureAlertsItem2Status, App4FeatureAlertsItem2Filter } from './app4-feature-alerts-item2.model';
-import { IApp4FeatureAlertsItem3, App4FeatureAlertsItem3Model, App4FeatureAlertsItem3Status, App4FeatureAlertsItem3Filter } from './app4-feature-alerts-item3.model';
-import { IApp4FeatureAlertsItem4, App4FeatureAlertsItem4Model, App4FeatureAlertsItem4Status, App4FeatureAlertsItem4Filter } from './app4-feature-alerts-item4.model';
+import type { IApp4FeatureAlertsItem2, App4FeatureAlertsItem2Status } from './app4-feature-alerts-item2.model';
+import type { IApp4FeatureAlertsItem3, App4FeatureAlertsItem3Status } from './app4-feature-alerts-item3.model';
+import type { IApp4FeatureAlertsItem4, App4FeatureAlertsItem4Status } from './app4-feature-alerts-item4.model';
 
 export interface App4FeatureAlertsSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureAlertsSvc2CacheEntry<T> {
 }
 
 export class App4FeatureAlertsSvc2Service {
-  private cache = new Map<string, App4FeatureAlertsSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureAlertsSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureAlertsSvc2ServiceConfig;
 
-  constructor(private config: App4FeatureAlertsSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureAlertsSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureAlertsSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureAlertsSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

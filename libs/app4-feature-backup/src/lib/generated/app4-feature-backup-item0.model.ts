@@ -57,32 +57,27 @@ export interface IApp4FeatureBackupItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureBackupItem0Model implements IApp4FeatureBackupItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureBackupItem0Status = undefined as any;
-  enabled: App4FeatureBackupItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp4FeatureBackupItem0(data: Partial<IApp4FeatureBackupItem0> = {}): IApp4FeatureBackupItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureBackupItem0;
+}
 
-  constructor(data?: Partial<IApp4FeatureBackupItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureBackupItem0(entity: IApp4FeatureBackupItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureBackupItem0 {
-    return { ...this } as IApp4FeatureBackupItem0;
-  }
-
-  clone(): App4FeatureBackupItem0Model {
-    return new App4FeatureBackupItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureBackupItem0(entity: IApp4FeatureBackupItem0): IApp4FeatureBackupItem0 {
+  return { ...entity };
 }

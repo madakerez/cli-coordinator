@@ -1,6 +1,6 @@
-import { IApp4UiBadgesItem1, App4UiBadgesItem1Model, App4UiBadgesItem1Status, App4UiBadgesItem1Filter } from './app4-ui-badges-item1.model';
-import { IApp4UiBadgesItem2, App4UiBadgesItem2Model, App4UiBadgesItem2Status, App4UiBadgesItem2Filter } from './app4-ui-badges-item2.model';
-import { IApp4UiBadgesItem3, App4UiBadgesItem3Model, App4UiBadgesItem3Status, App4UiBadgesItem3Filter } from './app4-ui-badges-item3.model';
+import type { IApp4UiBadgesItem1, App4UiBadgesItem1Status } from './app4-ui-badges-item1.model';
+import type { IApp4UiBadgesItem2, App4UiBadgesItem2Status } from './app4-ui-badges-item2.model';
+import type { IApp4UiBadgesItem3, App4UiBadgesItem3Status } from './app4-ui-badges-item3.model';
 
 export interface App4UiBadgesSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4UiBadgesSvc1CacheEntry<T> {
 }
 
 export class App4UiBadgesSvc1Service {
-  private cache = new Map<string, App4UiBadgesSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4UiBadgesSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4UiBadgesSvc1ServiceConfig;
 
-  constructor(private config: App4UiBadgesSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4UiBadgesSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4UiBadgesSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4UiBadgesSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

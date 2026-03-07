@@ -66,41 +66,27 @@ export interface IApp4UiNavigationItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UiNavigationItem9Model implements IApp4UiNavigationItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UiNavigationItem9Status = undefined as any;
-  enabled: App4UiNavigationItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4UiNavigationItem9Status = undefined as any;
-  category: App4UiNavigationItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: App4UiNavigationItem9Status = undefined as any;
+export function createApp4UiNavigationItem9(data: Partial<IApp4UiNavigationItem9> = {}): IApp4UiNavigationItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UiNavigationItem9;
+}
 
-  constructor(data?: Partial<IApp4UiNavigationItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UiNavigationItem9(entity: IApp4UiNavigationItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UiNavigationItem9 {
-    return { ...this } as IApp4UiNavigationItem9;
-  }
-
-  clone(): App4UiNavigationItem9Model {
-    return new App4UiNavigationItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UiNavigationItem9(entity: IApp4UiNavigationItem9): IApp4UiNavigationItem9 {
+  return { ...entity };
 }

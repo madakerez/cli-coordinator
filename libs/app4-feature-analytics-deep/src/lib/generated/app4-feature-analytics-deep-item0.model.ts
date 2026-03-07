@@ -57,32 +57,27 @@ export interface IApp4FeatureAnalyticsDeepItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureAnalyticsDeepItem0Model implements IApp4FeatureAnalyticsDeepItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureAnalyticsDeepItem0Status = undefined as any;
-  enabled: App4FeatureAnalyticsDeepItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp4FeatureAnalyticsDeepItem0(data: Partial<IApp4FeatureAnalyticsDeepItem0> = {}): IApp4FeatureAnalyticsDeepItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureAnalyticsDeepItem0;
+}
 
-  constructor(data?: Partial<IApp4FeatureAnalyticsDeepItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureAnalyticsDeepItem0(entity: IApp4FeatureAnalyticsDeepItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureAnalyticsDeepItem0 {
-    return { ...this } as IApp4FeatureAnalyticsDeepItem0;
-  }
-
-  clone(): App4FeatureAnalyticsDeepItem0Model {
-    return new App4FeatureAnalyticsDeepItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureAnalyticsDeepItem0(entity: IApp4FeatureAnalyticsDeepItem0): IApp4FeatureAnalyticsDeepItem0 {
+  return { ...entity };
 }

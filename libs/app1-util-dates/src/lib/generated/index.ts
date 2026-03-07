@@ -8,3 +8,6 @@ export * from './app1-util-dates-util1.utils';
 export * from './app1-util-dates-widget0.component';
 export * from './app1-util-dates-widget1.component';
 export * from './app1-util-dates-handler0.handler';
+export * from './app1-util-dates-handler1.handler';
+export * from './app1-util-dates-handler2.handler';
+export * from './app1-util-dates-handler3.handler';

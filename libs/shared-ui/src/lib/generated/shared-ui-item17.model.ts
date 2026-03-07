@@ -62,37 +62,27 @@ export interface ISharedUiItem17Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedUiItem17Model implements ISharedUiItem17 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedUiItem17Status = undefined as any;
-  enabled: SharedUiItem17Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedUiItem17Status = undefined as any;
-  category: SharedUiItem17Type = undefined as any;
-  tags: string = undefined as any;
+export function createSharedUiItem17(data: Partial<ISharedUiItem17> = {}): ISharedUiItem17 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedUiItem17;
+}
 
-  constructor(data?: Partial<ISharedUiItem17>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedUiItem17(entity: ISharedUiItem17): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedUiItem17 {
-    return { ...this } as ISharedUiItem17;
-  }
-
-  clone(): SharedUiItem17Model {
-    return new SharedUiItem17Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedUiItem17(entity: ISharedUiItem17): ISharedUiItem17 {
+  return { ...entity };
 }

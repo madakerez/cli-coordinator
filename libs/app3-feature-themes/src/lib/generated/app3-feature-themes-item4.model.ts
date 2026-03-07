@@ -61,36 +61,27 @@ export interface IApp3FeatureThemesItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureThemesItem4Model implements IApp3FeatureThemesItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureThemesItem4Status = undefined as any;
-  enabled: App3FeatureThemesItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureThemesItem4Status = undefined as any;
-  category: App3FeatureThemesItem4Type = undefined as any;
+export function createApp3FeatureThemesItem4(data: Partial<IApp3FeatureThemesItem4> = {}): IApp3FeatureThemesItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureThemesItem4;
+}
 
-  constructor(data?: Partial<IApp3FeatureThemesItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureThemesItem4(entity: IApp3FeatureThemesItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureThemesItem4 {
-    return { ...this } as IApp3FeatureThemesItem4;
-  }
-
-  clone(): App3FeatureThemesItem4Model {
-    return new App3FeatureThemesItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureThemesItem4(entity: IApp3FeatureThemesItem4): IApp3FeatureThemesItem4 {
+  return { ...entity };
 }

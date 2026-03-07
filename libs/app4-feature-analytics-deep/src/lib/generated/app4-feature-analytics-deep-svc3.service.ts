@@ -1,6 +1,6 @@
-import { IApp4FeatureAnalyticsDeepItem3, App4FeatureAnalyticsDeepItem3Model, App4FeatureAnalyticsDeepItem3Status, App4FeatureAnalyticsDeepItem3Filter } from './app4-feature-analytics-deep-item3.model';
-import { IApp4FeatureAnalyticsDeepItem4, App4FeatureAnalyticsDeepItem4Model, App4FeatureAnalyticsDeepItem4Status, App4FeatureAnalyticsDeepItem4Filter } from './app4-feature-analytics-deep-item4.model';
-import { IApp4FeatureAnalyticsDeepItem5, App4FeatureAnalyticsDeepItem5Model, App4FeatureAnalyticsDeepItem5Status, App4FeatureAnalyticsDeepItem5Filter } from './app4-feature-analytics-deep-item5.model';
+import type { IApp4FeatureAnalyticsDeepItem3, App4FeatureAnalyticsDeepItem3Status } from './app4-feature-analytics-deep-item3.model';
+import type { IApp4FeatureAnalyticsDeepItem4, App4FeatureAnalyticsDeepItem4Status } from './app4-feature-analytics-deep-item4.model';
+import type { IApp4FeatureAnalyticsDeepItem5, App4FeatureAnalyticsDeepItem5Status } from './app4-feature-analytics-deep-item5.model';
 
 export interface App4FeatureAnalyticsDeepSvc3ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureAnalyticsDeepSvc3CacheEntry<T> {
 }
 
 export class App4FeatureAnalyticsDeepSvc3Service {
-  private cache = new Map<string, App4FeatureAnalyticsDeepSvc3CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureAnalyticsDeepSvc3CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureAnalyticsDeepSvc3ServiceConfig;
 
-  constructor(private config: App4FeatureAnalyticsDeepSvc3ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureAnalyticsDeepSvc3ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureAnalyticsDeepSvc3Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureAnalyticsDeepSvc3Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

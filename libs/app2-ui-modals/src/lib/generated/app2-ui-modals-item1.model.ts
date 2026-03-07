@@ -58,33 +58,27 @@ export interface IApp2UiModalsItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2UiModalsItem1Model implements IApp2UiModalsItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2UiModalsItem1Status = undefined as any;
-  enabled: App2UiModalsItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp2UiModalsItem1(data: Partial<IApp2UiModalsItem1> = {}): IApp2UiModalsItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2UiModalsItem1;
+}
 
-  constructor(data?: Partial<IApp2UiModalsItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2UiModalsItem1(entity: IApp2UiModalsItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2UiModalsItem1 {
-    return { ...this } as IApp2UiModalsItem1;
-  }
-
-  clone(): App2UiModalsItem1Model {
-    return new App2UiModalsItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2UiModalsItem1(entity: IApp2UiModalsItem1): IApp2UiModalsItem1 {
+  return { ...entity };
 }

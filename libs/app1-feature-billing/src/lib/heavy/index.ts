@@ -10,3 +10,7 @@ export * from './heavy-8.types';
 export * from './heavy-9.types';
 export * from './heavy-10.types';
 export * from './heavy-11.types';
+export * from './heavy-12.types';
+export * from './heavy-13.types';
+export * from './heavy-14.types';
+export * from './heavy-15.types';

@@ -62,37 +62,27 @@ export interface ISharedFeatureFlagsItem5Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedFeatureFlagsItem5Model implements ISharedFeatureFlagsItem5 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedFeatureFlagsItem5Status = undefined as any;
-  enabled: SharedFeatureFlagsItem5Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedFeatureFlagsItem5Status = undefined as any;
-  category: SharedFeatureFlagsItem5Type = undefined as any;
-  tags: string = undefined as any;
+export function createSharedFeatureFlagsItem5(data: Partial<ISharedFeatureFlagsItem5> = {}): ISharedFeatureFlagsItem5 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedFeatureFlagsItem5;
+}
 
-  constructor(data?: Partial<ISharedFeatureFlagsItem5>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedFeatureFlagsItem5(entity: ISharedFeatureFlagsItem5): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedFeatureFlagsItem5 {
-    return { ...this } as ISharedFeatureFlagsItem5;
-  }
-
-  clone(): SharedFeatureFlagsItem5Model {
-    return new SharedFeatureFlagsItem5Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedFeatureFlagsItem5(entity: ISharedFeatureFlagsItem5): ISharedFeatureFlagsItem5 {
+  return { ...entity };
 }

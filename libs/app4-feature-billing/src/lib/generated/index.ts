@@ -26,4 +26,3 @@ export * from './app4-feature-billing-handler1.handler';
 export * from './app4-feature-billing-handler2.handler';
 export * from './app4-feature-billing-handler3.handler';
 export * from './app4-feature-billing-handler4.handler';
-export * from './app4-feature-billing-handler5.handler';

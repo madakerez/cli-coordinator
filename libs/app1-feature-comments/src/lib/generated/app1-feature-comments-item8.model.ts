@@ -65,40 +65,27 @@ export interface IApp1FeatureCommentsItem8Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureCommentsItem8Model implements IApp1FeatureCommentsItem8 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureCommentsItem8Status = undefined as any;
-  enabled: App1FeatureCommentsItem8Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureCommentsItem8Status = undefined as any;
-  category: App1FeatureCommentsItem8Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
+export function createApp1FeatureCommentsItem8(data: Partial<IApp1FeatureCommentsItem8> = {}): IApp1FeatureCommentsItem8 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureCommentsItem8;
+}
 
-  constructor(data?: Partial<IApp1FeatureCommentsItem8>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureCommentsItem8(entity: IApp1FeatureCommentsItem8): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureCommentsItem8 {
-    return { ...this } as IApp1FeatureCommentsItem8;
-  }
-
-  clone(): App1FeatureCommentsItem8Model {
-    return new App1FeatureCommentsItem8Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureCommentsItem8(entity: IApp1FeatureCommentsItem8): IApp1FeatureCommentsItem8 {
+  return { ...entity };
 }

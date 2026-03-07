@@ -57,32 +57,27 @@ export interface IApp4UiPanelsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4UiPanelsItem0Model implements IApp4UiPanelsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4UiPanelsItem0Status = undefined as any;
-  enabled: App4UiPanelsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp4UiPanelsItem0(data: Partial<IApp4UiPanelsItem0> = {}): IApp4UiPanelsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UiPanelsItem0;
+}
 
-  constructor(data?: Partial<IApp4UiPanelsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4UiPanelsItem0(entity: IApp4UiPanelsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4UiPanelsItem0 {
-    return { ...this } as IApp4UiPanelsItem0;
-  }
-
-  clone(): App4UiPanelsItem0Model {
-    return new App4UiPanelsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4UiPanelsItem0(entity: IApp4UiPanelsItem0): IApp4UiPanelsItem0 {
+  return { ...entity };
 }

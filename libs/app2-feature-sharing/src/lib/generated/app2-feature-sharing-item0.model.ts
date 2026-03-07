@@ -57,32 +57,27 @@ export interface IApp2FeatureSharingItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2FeatureSharingItem0Model implements IApp2FeatureSharingItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2FeatureSharingItem0Status = undefined as any;
-  enabled: App2FeatureSharingItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp2FeatureSharingItem0(data: Partial<IApp2FeatureSharingItem0> = {}): IApp2FeatureSharingItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2FeatureSharingItem0;
+}
 
-  constructor(data?: Partial<IApp2FeatureSharingItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2FeatureSharingItem0(entity: IApp2FeatureSharingItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2FeatureSharingItem0 {
-    return { ...this } as IApp2FeatureSharingItem0;
-  }
-
-  clone(): App2FeatureSharingItem0Model {
-    return new App2FeatureSharingItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2FeatureSharingItem0(entity: IApp2FeatureSharingItem0): IApp2FeatureSharingItem0 {
+  return { ...entity };
 }

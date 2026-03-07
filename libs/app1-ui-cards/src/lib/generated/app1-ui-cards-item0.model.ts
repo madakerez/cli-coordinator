@@ -57,32 +57,27 @@ export interface IApp1UiCardsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1UiCardsItem0Model implements IApp1UiCardsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1UiCardsItem0Status = undefined as any;
-  enabled: App1UiCardsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp1UiCardsItem0(data: Partial<IApp1UiCardsItem0> = {}): IApp1UiCardsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1UiCardsItem0;
+}
 
-  constructor(data?: Partial<IApp1UiCardsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1UiCardsItem0(entity: IApp1UiCardsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1UiCardsItem0 {
-    return { ...this } as IApp1UiCardsItem0;
-  }
-
-  clone(): App1UiCardsItem0Model {
-    return new App1UiCardsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1UiCardsItem0(entity: IApp1UiCardsItem0): IApp1UiCardsItem0 {
+  return { ...entity };
 }

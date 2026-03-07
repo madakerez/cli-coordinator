@@ -1,6 +1,4 @@
-import { IApp2FeatureBookmarksItem0, App2FeatureBookmarksItem0Model, App2FeatureBookmarksItem0Status, App2FeatureBookmarksItem0Filter } from './app2-feature-bookmarks-item0.model';
-import { IApp2FeatureBookmarksItem1, App2FeatureBookmarksItem1Model, App2FeatureBookmarksItem1Status, App2FeatureBookmarksItem1Filter } from './app2-feature-bookmarks-item1.model';
-import { IApp2FeatureBookmarksItem2, App2FeatureBookmarksItem2Model, App2FeatureBookmarksItem2Status, App2FeatureBookmarksItem2Filter } from './app2-feature-bookmarks-item2.model';
+import type { IApp2FeatureBookmarksItem0, App2FeatureBookmarksItem0Status } from './app2-feature-bookmarks-item0.model';
 
 export interface App2FeatureBookmarksSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +15,20 @@ export interface App2FeatureBookmarksSvc0CacheEntry<T> {
 }
 
 export class App2FeatureBookmarksSvc0Service {
-  private cache = new Map<string, App2FeatureBookmarksSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App2FeatureBookmarksSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App2FeatureBookmarksSvc0ServiceConfig;
 
-  constructor(private config: App2FeatureBookmarksSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App2FeatureBookmarksSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +38,7 @@ export class App2FeatureBookmarksSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +66,6 @@ export class App2FeatureBookmarksSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

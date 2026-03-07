@@ -57,32 +57,27 @@ export interface ISharedConfigItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedConfigItem0Model implements ISharedConfigItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedConfigItem0Status = undefined as any;
-  enabled: SharedConfigItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createSharedConfigItem0(data: Partial<ISharedConfigItem0> = {}): ISharedConfigItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedConfigItem0;
+}
 
-  constructor(data?: Partial<ISharedConfigItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedConfigItem0(entity: ISharedConfigItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedConfigItem0 {
-    return { ...this } as ISharedConfigItem0;
-  }
-
-  clone(): SharedConfigItem0Model {
-    return new SharedConfigItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedConfigItem0(entity: ISharedConfigItem0): ISharedConfigItem0 {
+  return { ...entity };
 }

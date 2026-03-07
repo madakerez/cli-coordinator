@@ -61,36 +61,27 @@ export interface IApp3FeatureCollaborationItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureCollaborationItem4Model implements IApp3FeatureCollaborationItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureCollaborationItem4Status = undefined as any;
-  enabled: App3FeatureCollaborationItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureCollaborationItem4Status = undefined as any;
-  category: App3FeatureCollaborationItem4Type = undefined as any;
+export function createApp3FeatureCollaborationItem4(data: Partial<IApp3FeatureCollaborationItem4> = {}): IApp3FeatureCollaborationItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureCollaborationItem4;
+}
 
-  constructor(data?: Partial<IApp3FeatureCollaborationItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureCollaborationItem4(entity: IApp3FeatureCollaborationItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureCollaborationItem4 {
-    return { ...this } as IApp3FeatureCollaborationItem4;
-  }
-
-  clone(): App3FeatureCollaborationItem4Model {
-    return new App3FeatureCollaborationItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureCollaborationItem4(entity: IApp3FeatureCollaborationItem4): IApp3FeatureCollaborationItem4 {
+  return { ...entity };
 }

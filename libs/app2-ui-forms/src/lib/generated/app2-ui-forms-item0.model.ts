@@ -57,32 +57,27 @@ export interface IApp2UiFormsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2UiFormsItem0Model implements IApp2UiFormsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2UiFormsItem0Status = undefined as any;
-  enabled: App2UiFormsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp2UiFormsItem0(data: Partial<IApp2UiFormsItem0> = {}): IApp2UiFormsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2UiFormsItem0;
+}
 
-  constructor(data?: Partial<IApp2UiFormsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2UiFormsItem0(entity: IApp2UiFormsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2UiFormsItem0 {
-    return { ...this } as IApp2UiFormsItem0;
-  }
-
-  clone(): App2UiFormsItem0Model {
-    return new App2UiFormsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2UiFormsItem0(entity: IApp2UiFormsItem0): IApp2UiFormsItem0 {
+  return { ...entity };
 }

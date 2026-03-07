@@ -59,34 +59,27 @@ export interface IApp2UtilValidatorsItem2Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2UtilValidatorsItem2Model implements IApp2UtilValidatorsItem2 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2UtilValidatorsItem2Status = undefined as any;
-  enabled: App2UtilValidatorsItem2Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
+export function createApp2UtilValidatorsItem2(data: Partial<IApp2UtilValidatorsItem2> = {}): IApp2UtilValidatorsItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2UtilValidatorsItem2;
+}
 
-  constructor(data?: Partial<IApp2UtilValidatorsItem2>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2UtilValidatorsItem2(entity: IApp2UtilValidatorsItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2UtilValidatorsItem2 {
-    return { ...this } as IApp2UtilValidatorsItem2;
-  }
-
-  clone(): App2UtilValidatorsItem2Model {
-    return new App2UtilValidatorsItem2Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2UtilValidatorsItem2(entity: IApp2UtilValidatorsItem2): IApp2UtilValidatorsItem2 {
+  return { ...entity };
 }

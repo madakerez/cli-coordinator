@@ -28,3 +28,4 @@ export * from './heavy-26.types';
 export * from './heavy-27.types';
 export * from './heavy-28.types';
 export * from './heavy-29.types';
+export * from './heavy-30.types';

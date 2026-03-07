@@ -57,32 +57,27 @@ export interface IApp3DataAccessItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3DataAccessItem0Model implements IApp3DataAccessItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3DataAccessItem0Status = undefined as any;
-  enabled: App3DataAccessItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp3DataAccessItem0(data: Partial<IApp3DataAccessItem0> = {}): IApp3DataAccessItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3DataAccessItem0;
+}
 
-  constructor(data?: Partial<IApp3DataAccessItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3DataAccessItem0(entity: IApp3DataAccessItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3DataAccessItem0 {
-    return { ...this } as IApp3DataAccessItem0;
-  }
-
-  clone(): App3DataAccessItem0Model {
-    return new App3DataAccessItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3DataAccessItem0(entity: IApp3DataAccessItem0): IApp3DataAccessItem0 {
+  return { ...entity };
 }

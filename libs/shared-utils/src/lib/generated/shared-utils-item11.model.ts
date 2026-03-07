@@ -68,43 +68,27 @@ export interface ISharedUtilsItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedUtilsItem11Model implements ISharedUtilsItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedUtilsItem11Status = undefined as any;
-  enabled: SharedUtilsItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedUtilsItem11Status = undefined as any;
-  category: SharedUtilsItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedUtilsItem11Status = undefined as any;
-  status: SharedUtilsItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedUtilsItem11(data: Partial<ISharedUtilsItem11> = {}): ISharedUtilsItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedUtilsItem11;
+}
 
-  constructor(data?: Partial<ISharedUtilsItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedUtilsItem11(entity: ISharedUtilsItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedUtilsItem11 {
-    return { ...this } as ISharedUtilsItem11;
-  }
-
-  clone(): SharedUtilsItem11Model {
-    return new SharedUtilsItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedUtilsItem11(entity: ISharedUtilsItem11): ISharedUtilsItem11 {
+  return { ...entity };
 }

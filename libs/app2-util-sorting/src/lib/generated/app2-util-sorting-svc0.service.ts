@@ -1,5 +1,5 @@
-import { IApp2UtilSortingItem0, App2UtilSortingItem0Model, App2UtilSortingItem0Status, App2UtilSortingItem0Filter } from './app2-util-sorting-item0.model';
-import { IApp2UtilSortingItem1, App2UtilSortingItem1Model, App2UtilSortingItem1Status, App2UtilSortingItem1Filter } from './app2-util-sorting-item1.model';
+import type { IApp2UtilSortingItem0, App2UtilSortingItem0Status } from './app2-util-sorting-item0.model';
+import type { IApp2UtilSortingItem1, App2UtilSortingItem1Status } from './app2-util-sorting-item1.model';
 
 export interface App2UtilSortingSvc0ServiceConfig {
   baseUrl: string;
@@ -16,17 +16,20 @@ export interface App2UtilSortingSvc0CacheEntry<T> {
 }
 
 export class App2UtilSortingSvc0Service {
-  private cache = new Map<string, App2UtilSortingSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App2UtilSortingSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App2UtilSortingSvc0ServiceConfig;
 
-  constructor(private config: App2UtilSortingSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App2UtilSortingSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -36,7 +39,7 @@ export class App2UtilSortingSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -64,6 +67,6 @@ export class App2UtilSortingSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

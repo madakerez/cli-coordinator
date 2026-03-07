@@ -6,4 +6,3 @@ export * from './app3-util-diff-widget0.component';
 export * from './app3-util-diff-handler0.handler';
 export * from './app3-util-diff-handler1.handler';
 export * from './app3-util-diff-handler2.handler';
-export * from './app3-util-diff-handler3.handler';

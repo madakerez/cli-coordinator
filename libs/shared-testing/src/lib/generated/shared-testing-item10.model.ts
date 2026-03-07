@@ -67,42 +67,27 @@ export interface ISharedTestingItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedTestingItem10Model implements ISharedTestingItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedTestingItem10Status = undefined as any;
-  enabled: SharedTestingItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedTestingItem10Status = undefined as any;
-  category: SharedTestingItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedTestingItem10Status = undefined as any;
-  status: SharedTestingItem10Type = undefined as any;
+export function createSharedTestingItem10(data: Partial<ISharedTestingItem10> = {}): ISharedTestingItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedTestingItem10;
+}
 
-  constructor(data?: Partial<ISharedTestingItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedTestingItem10(entity: ISharedTestingItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedTestingItem10 {
-    return { ...this } as ISharedTestingItem10;
-  }
-
-  clone(): SharedTestingItem10Model {
-    return new SharedTestingItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedTestingItem10(entity: ISharedTestingItem10): ISharedTestingItem10 {
+  return { ...entity };
 }

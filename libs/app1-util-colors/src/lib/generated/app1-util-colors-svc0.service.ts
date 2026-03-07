@@ -1,6 +1,6 @@
-import { IApp1UtilColorsItem0, App1UtilColorsItem0Model, App1UtilColorsItem0Status, App1UtilColorsItem0Filter } from './app1-util-colors-item0.model';
-import { IApp1UtilColorsItem1, App1UtilColorsItem1Model, App1UtilColorsItem1Status, App1UtilColorsItem1Filter } from './app1-util-colors-item1.model';
-import { IApp1UtilColorsItem2, App1UtilColorsItem2Model, App1UtilColorsItem2Status, App1UtilColorsItem2Filter } from './app1-util-colors-item2.model';
+import type { IApp1UtilColorsItem0, App1UtilColorsItem0Status } from './app1-util-colors-item0.model';
+import type { IApp1UtilColorsItem1, App1UtilColorsItem1Status } from './app1-util-colors-item1.model';
+import type { IApp1UtilColorsItem2, App1UtilColorsItem2Status } from './app1-util-colors-item2.model';
 
 export interface App1UtilColorsSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1UtilColorsSvc0CacheEntry<T> {
 }
 
 export class App1UtilColorsSvc0Service {
-  private cache = new Map<string, App1UtilColorsSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1UtilColorsSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1UtilColorsSvc0ServiceConfig;
 
-  constructor(private config: App1UtilColorsSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1UtilColorsSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1UtilColorsSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1UtilColorsSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

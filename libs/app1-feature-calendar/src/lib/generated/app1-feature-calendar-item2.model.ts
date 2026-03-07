@@ -59,34 +59,27 @@ export interface IApp1FeatureCalendarItem2Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureCalendarItem2Model implements IApp1FeatureCalendarItem2 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureCalendarItem2Status = undefined as any;
-  enabled: App1FeatureCalendarItem2Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
+export function createApp1FeatureCalendarItem2(data: Partial<IApp1FeatureCalendarItem2> = {}): IApp1FeatureCalendarItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureCalendarItem2;
+}
 
-  constructor(data?: Partial<IApp1FeatureCalendarItem2>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureCalendarItem2(entity: IApp1FeatureCalendarItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureCalendarItem2 {
-    return { ...this } as IApp1FeatureCalendarItem2;
-  }
-
-  clone(): App1FeatureCalendarItem2Model {
-    return new App1FeatureCalendarItem2Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureCalendarItem2(entity: IApp1FeatureCalendarItem2): IApp1FeatureCalendarItem2 {
+  return { ...entity };
 }

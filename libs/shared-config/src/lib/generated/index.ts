@@ -55,3 +55,5 @@ export * from './shared-config-handler3.handler';
 export * from './shared-config-handler4.handler';
 export * from './shared-config-handler5.handler';
 export * from './shared-config-handler6.handler';
+export * from './shared-config-handler7.handler';
+export * from './shared-config-handler8.handler';

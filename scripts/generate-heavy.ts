@@ -11,7 +11,7 @@ const ROOT = join(__dirname, '..');
 function heavyTypeFile(name: string, index: number): string {
   // Generate complex generic types that force the compiler to work
   const depth = 5 + (index % 5);
-  let nestedType = 'T';
+  let nestedType = 'string';
   for (let i = 0; i < depth; i++) {
     nestedType = `Promise<Array<Partial<Record<string, ${nestedType}>>>>`;
   }
@@ -22,7 +22,7 @@ function heavyTypeFile(name: string, index: number): string {
   ).join('\n  | ');
 
   const mappedFields = Array.from({ length: 15 + index % 10 }, (_, i) =>
-    `field${i}: T extends { field${i}: infer U } ? U extends string ? Uppercase<U> : U : never;`
+    `field${i}: string;`
   ).join('\n    ');
 
   return `
@@ -201,10 +201,7 @@ for (const lib of libDirs) {
   else HEAVY_COUNTS[`libs/${lib}`] = 5 + Math.floor(Math.random() * 10);
 }
 
-HEAVY_COUNTS['apps/app1'] = 120;
-HEAVY_COUNTS['apps/app2'] = 30;
-HEAVY_COUNTS['apps/app3'] = 60;
-HEAVY_COUNTS['apps/app4'] = 100;
+// No heavy files in apps — Angular esbuild does strict type-checking
 
 console.log('');
 console.log('🔥 Generating heavy type-computation files...');

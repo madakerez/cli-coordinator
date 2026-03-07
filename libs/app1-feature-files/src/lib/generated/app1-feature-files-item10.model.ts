@@ -67,42 +67,27 @@ export interface IApp1FeatureFilesItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureFilesItem10Model implements IApp1FeatureFilesItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureFilesItem10Status = undefined as any;
-  enabled: App1FeatureFilesItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureFilesItem10Status = undefined as any;
-  category: App1FeatureFilesItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: App1FeatureFilesItem10Status = undefined as any;
-  status: App1FeatureFilesItem10Type = undefined as any;
+export function createApp1FeatureFilesItem10(data: Partial<IApp1FeatureFilesItem10> = {}): IApp1FeatureFilesItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureFilesItem10;
+}
 
-  constructor(data?: Partial<IApp1FeatureFilesItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureFilesItem10(entity: IApp1FeatureFilesItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureFilesItem10 {
-    return { ...this } as IApp1FeatureFilesItem10;
-  }
-
-  clone(): App1FeatureFilesItem10Model {
-    return new App1FeatureFilesItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureFilesItem10(entity: IApp1FeatureFilesItem10): IApp1FeatureFilesItem10 {
+  return { ...entity };
 }

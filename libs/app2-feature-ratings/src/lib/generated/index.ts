@@ -8,3 +8,6 @@ export * from './app2-feature-ratings-util1.utils';
 export * from './app2-feature-ratings-widget0.component';
 export * from './app2-feature-ratings-widget1.component';
 export * from './app2-feature-ratings-handler0.handler';
+export * from './app2-feature-ratings-handler1.handler';
+export * from './app2-feature-ratings-handler2.handler';
+export * from './app2-feature-ratings-handler3.handler';

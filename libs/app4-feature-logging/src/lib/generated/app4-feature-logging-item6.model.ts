@@ -63,38 +63,27 @@ export interface IApp4FeatureLoggingItem6Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureLoggingItem6Model implements IApp4FeatureLoggingItem6 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureLoggingItem6Status = undefined as any;
-  enabled: App4FeatureLoggingItem6Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4FeatureLoggingItem6Status = undefined as any;
-  category: App4FeatureLoggingItem6Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
+export function createApp4FeatureLoggingItem6(data: Partial<IApp4FeatureLoggingItem6> = {}): IApp4FeatureLoggingItem6 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureLoggingItem6;
+}
 
-  constructor(data?: Partial<IApp4FeatureLoggingItem6>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureLoggingItem6(entity: IApp4FeatureLoggingItem6): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureLoggingItem6 {
-    return { ...this } as IApp4FeatureLoggingItem6;
-  }
-
-  clone(): App4FeatureLoggingItem6Model {
-    return new App4FeatureLoggingItem6Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureLoggingItem6(entity: IApp4FeatureLoggingItem6): IApp4FeatureLoggingItem6 {
+  return { ...entity };
 }

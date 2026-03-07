@@ -67,42 +67,27 @@ export interface ISharedFeatureFlagsItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedFeatureFlagsItem10Model implements ISharedFeatureFlagsItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedFeatureFlagsItem10Status = undefined as any;
-  enabled: SharedFeatureFlagsItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedFeatureFlagsItem10Status = undefined as any;
-  category: SharedFeatureFlagsItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedFeatureFlagsItem10Status = undefined as any;
-  status: SharedFeatureFlagsItem10Type = undefined as any;
+export function createSharedFeatureFlagsItem10(data: Partial<ISharedFeatureFlagsItem10> = {}): ISharedFeatureFlagsItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedFeatureFlagsItem10;
+}
 
-  constructor(data?: Partial<ISharedFeatureFlagsItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedFeatureFlagsItem10(entity: ISharedFeatureFlagsItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedFeatureFlagsItem10 {
-    return { ...this } as ISharedFeatureFlagsItem10;
-  }
-
-  clone(): SharedFeatureFlagsItem10Model {
-    return new SharedFeatureFlagsItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedFeatureFlagsItem10(entity: ISharedFeatureFlagsItem10): ISharedFeatureFlagsItem10 {
+  return { ...entity };
 }

@@ -1,6 +1,6 @@
-import { ISharedNotificationsItem2, SharedNotificationsItem2Model, SharedNotificationsItem2Status, SharedNotificationsItem2Filter } from './shared-notifications-item2.model';
-import { ISharedNotificationsItem3, SharedNotificationsItem3Model, SharedNotificationsItem3Status, SharedNotificationsItem3Filter } from './shared-notifications-item3.model';
-import { ISharedNotificationsItem4, SharedNotificationsItem4Model, SharedNotificationsItem4Status, SharedNotificationsItem4Filter } from './shared-notifications-item4.model';
+import type { ISharedNotificationsItem2, SharedNotificationsItem2Status } from './shared-notifications-item2.model';
+import type { ISharedNotificationsItem3, SharedNotificationsItem3Status } from './shared-notifications-item3.model';
+import type { ISharedNotificationsItem4, SharedNotificationsItem4Status } from './shared-notifications-item4.model';
 
 export interface SharedNotificationsSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedNotificationsSvc2CacheEntry<T> {
 }
 
 export class SharedNotificationsSvc2Service {
-  private cache = new Map<string, SharedNotificationsSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedNotificationsSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedNotificationsSvc2ServiceConfig;
 
-  constructor(private config: SharedNotificationsSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedNotificationsSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedNotificationsSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedNotificationsSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

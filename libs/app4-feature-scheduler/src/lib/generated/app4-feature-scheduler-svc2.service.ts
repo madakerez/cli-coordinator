@@ -1,6 +1,6 @@
-import { IApp4FeatureSchedulerItem2, App4FeatureSchedulerItem2Model, App4FeatureSchedulerItem2Status, App4FeatureSchedulerItem2Filter } from './app4-feature-scheduler-item2.model';
-import { IApp4FeatureSchedulerItem3, App4FeatureSchedulerItem3Model, App4FeatureSchedulerItem3Status, App4FeatureSchedulerItem3Filter } from './app4-feature-scheduler-item3.model';
-import { IApp4FeatureSchedulerItem4, App4FeatureSchedulerItem4Model, App4FeatureSchedulerItem4Status, App4FeatureSchedulerItem4Filter } from './app4-feature-scheduler-item4.model';
+import type { IApp4FeatureSchedulerItem2, App4FeatureSchedulerItem2Status } from './app4-feature-scheduler-item2.model';
+import type { IApp4FeatureSchedulerItem3, App4FeatureSchedulerItem3Status } from './app4-feature-scheduler-item3.model';
+import type { IApp4FeatureSchedulerItem4, App4FeatureSchedulerItem4Status } from './app4-feature-scheduler-item4.model';
 
 export interface App4FeatureSchedulerSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureSchedulerSvc2CacheEntry<T> {
 }
 
 export class App4FeatureSchedulerSvc2Service {
-  private cache = new Map<string, App4FeatureSchedulerSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureSchedulerSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureSchedulerSvc2ServiceConfig;
 
-  constructor(private config: App4FeatureSchedulerSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureSchedulerSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureSchedulerSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureSchedulerSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

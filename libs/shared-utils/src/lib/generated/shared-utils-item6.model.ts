@@ -63,38 +63,27 @@ export interface ISharedUtilsItem6Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedUtilsItem6Model implements ISharedUtilsItem6 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedUtilsItem6Status = undefined as any;
-  enabled: SharedUtilsItem6Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedUtilsItem6Status = undefined as any;
-  category: SharedUtilsItem6Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
+export function createSharedUtilsItem6(data: Partial<ISharedUtilsItem6> = {}): ISharedUtilsItem6 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedUtilsItem6;
+}
 
-  constructor(data?: Partial<ISharedUtilsItem6>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedUtilsItem6(entity: ISharedUtilsItem6): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedUtilsItem6 {
-    return { ...this } as ISharedUtilsItem6;
-  }
-
-  clone(): SharedUtilsItem6Model {
-    return new SharedUtilsItem6Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedUtilsItem6(entity: ISharedUtilsItem6): ISharedUtilsItem6 {
+  return { ...entity };
 }

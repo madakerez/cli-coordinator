@@ -71,34 +71,36 @@ export interface I${name}Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class ${name}Model implements I${name} {
-${fields.map(f => f.replace('?:', ':').replace(';', ' = undefined as any;')).join('\n')}
+export function create${name}(data: Partial<I${name}> = {}): I${name} {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as I${name};
+}
 
-  constructor(data?: Partial<I${name}>) {
-    if (data) Object.assign(this, data);
-  }
+export function validate${name}(entity: I${name}): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): I${name} {
-    return { ...this } as I${name};
-  }
-
-  clone(): ${name}Model {
-    return new ${name}Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function clone${name}(entity: I${name}): I${name} {
+  return { ...entity };
 }
 `.trim();
 }
 
 function serviceFile(name: string, models: string[]): string {
   const imports = models.slice(0, 3).map(m =>
-    `import { I${m}, ${m}Model, ${m}Status, ${m}Filter } from './${toFileName(m)}.model';`
+    `import type { I${m}, ${m}Status } from './${toFileName(m)}.model';`
   ).join('\n');
 
   return `
@@ -119,17 +121,20 @@ export interface ${name}CacheEntry<T> {
 }
 
 export class ${name}Service {
-  private cache = new Map<string, ${name}CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, ${name}CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: ${name}ServiceConfig;
 
-  constructor(private config: ${name}ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return \`\${method}:\${JSON.stringify(params)}\`;
+  constructor(config: ${name}ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return \`\${this.config.baseUrl}/\${method}:\${JSON.stringify(params)}\`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -139,7 +144,7 @@ export class ${name}Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -167,7 +172,7 @@ export class ${name}Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }
 `.trim();
@@ -590,14 +595,8 @@ for (const [lib, count] of Object.entries(LIB_SCALE)) {
   process.stdout.write(`   📦 ${lib}: ${generated} files\n`);
 }
 
-// Generate app files
-for (const [app, count] of Object.entries(APP_SCALE)) {
-  const dir = join(ROOT, 'apps', app);
-  if (!existsSync(dir)) continue;
-  const generated = generateFilesForProject(dir, count, app);
-  totalFiles += generated;
-  process.stdout.write(`   🚀 ${app}: ${generated} files\n`);
-}
+// Apps get their scale from lib dependencies — no generated files in apps
+// (Angular's esbuild does strict type-checking unlike SWC)
 
 console.log('');
 console.log(`✅ Generated ${totalFiles} TypeScript files`);

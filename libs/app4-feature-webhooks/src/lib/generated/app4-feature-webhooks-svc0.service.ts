@@ -1,6 +1,6 @@
-import { IApp4FeatureWebhooksItem0, App4FeatureWebhooksItem0Model, App4FeatureWebhooksItem0Status, App4FeatureWebhooksItem0Filter } from './app4-feature-webhooks-item0.model';
-import { IApp4FeatureWebhooksItem1, App4FeatureWebhooksItem1Model, App4FeatureWebhooksItem1Status, App4FeatureWebhooksItem1Filter } from './app4-feature-webhooks-item1.model';
-import { IApp4FeatureWebhooksItem2, App4FeatureWebhooksItem2Model, App4FeatureWebhooksItem2Status, App4FeatureWebhooksItem2Filter } from './app4-feature-webhooks-item2.model';
+import type { IApp4FeatureWebhooksItem0, App4FeatureWebhooksItem0Status } from './app4-feature-webhooks-item0.model';
+import type { IApp4FeatureWebhooksItem1, App4FeatureWebhooksItem1Status } from './app4-feature-webhooks-item1.model';
+import type { IApp4FeatureWebhooksItem2, App4FeatureWebhooksItem2Status } from './app4-feature-webhooks-item2.model';
 
 export interface App4FeatureWebhooksSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureWebhooksSvc0CacheEntry<T> {
 }
 
 export class App4FeatureWebhooksSvc0Service {
-  private cache = new Map<string, App4FeatureWebhooksSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureWebhooksSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureWebhooksSvc0ServiceConfig;
 
-  constructor(private config: App4FeatureWebhooksSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureWebhooksSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureWebhooksSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureWebhooksSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

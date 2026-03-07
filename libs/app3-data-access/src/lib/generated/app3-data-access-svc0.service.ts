@@ -1,6 +1,5 @@
-import { IApp3DataAccessItem0, App3DataAccessItem0Model, App3DataAccessItem0Status, App3DataAccessItem0Filter } from './app3-data-access-item0.model';
-import { IApp3DataAccessItem1, App3DataAccessItem1Model, App3DataAccessItem1Status, App3DataAccessItem1Filter } from './app3-data-access-item1.model';
-import { IApp3DataAccessItem2, App3DataAccessItem2Model, App3DataAccessItem2Status, App3DataAccessItem2Filter } from './app3-data-access-item2.model';
+import type { IApp3DataAccessItem0, App3DataAccessItem0Status } from './app3-data-access-item0.model';
+import type { IApp3DataAccessItem1, App3DataAccessItem1Status } from './app3-data-access-item1.model';
 
 export interface App3DataAccessSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +16,20 @@ export interface App3DataAccessSvc0CacheEntry<T> {
 }
 
 export class App3DataAccessSvc0Service {
-  private cache = new Map<string, App3DataAccessSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App3DataAccessSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App3DataAccessSvc0ServiceConfig;
 
-  constructor(private config: App3DataAccessSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App3DataAccessSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +39,7 @@ export class App3DataAccessSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +67,6 @@ export class App3DataAccessSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

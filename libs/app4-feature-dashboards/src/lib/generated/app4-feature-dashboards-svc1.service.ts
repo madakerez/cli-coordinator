@@ -1,6 +1,6 @@
-import { IApp4FeatureDashboardsItem1, App4FeatureDashboardsItem1Model, App4FeatureDashboardsItem1Status, App4FeatureDashboardsItem1Filter } from './app4-feature-dashboards-item1.model';
-import { IApp4FeatureDashboardsItem2, App4FeatureDashboardsItem2Model, App4FeatureDashboardsItem2Status, App4FeatureDashboardsItem2Filter } from './app4-feature-dashboards-item2.model';
-import { IApp4FeatureDashboardsItem3, App4FeatureDashboardsItem3Model, App4FeatureDashboardsItem3Status, App4FeatureDashboardsItem3Filter } from './app4-feature-dashboards-item3.model';
+import type { IApp4FeatureDashboardsItem1, App4FeatureDashboardsItem1Status } from './app4-feature-dashboards-item1.model';
+import type { IApp4FeatureDashboardsItem2, App4FeatureDashboardsItem2Status } from './app4-feature-dashboards-item2.model';
+import type { IApp4FeatureDashboardsItem3, App4FeatureDashboardsItem3Status } from './app4-feature-dashboards-item3.model';
 
 export interface App4FeatureDashboardsSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureDashboardsSvc1CacheEntry<T> {
 }
 
 export class App4FeatureDashboardsSvc1Service {
-  private cache = new Map<string, App4FeatureDashboardsSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureDashboardsSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureDashboardsSvc1ServiceConfig;
 
-  constructor(private config: App4FeatureDashboardsSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureDashboardsSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureDashboardsSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureDashboardsSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

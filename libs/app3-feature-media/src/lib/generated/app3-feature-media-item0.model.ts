@@ -57,32 +57,27 @@ export interface IApp3FeatureMediaItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureMediaItem0Model implements IApp3FeatureMediaItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureMediaItem0Status = undefined as any;
-  enabled: App3FeatureMediaItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp3FeatureMediaItem0(data: Partial<IApp3FeatureMediaItem0> = {}): IApp3FeatureMediaItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureMediaItem0;
+}
 
-  constructor(data?: Partial<IApp3FeatureMediaItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureMediaItem0(entity: IApp3FeatureMediaItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureMediaItem0 {
-    return { ...this } as IApp3FeatureMediaItem0;
-  }
-
-  clone(): App3FeatureMediaItem0Model {
-    return new App3FeatureMediaItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureMediaItem0(entity: IApp3FeatureMediaItem0): IApp3FeatureMediaItem0 {
+  return { ...entity };
 }

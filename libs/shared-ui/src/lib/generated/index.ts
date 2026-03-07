@@ -16,6 +16,7 @@ export * from './shared-ui-item14.model';
 export * from './shared-ui-item15.model';
 export * from './shared-ui-item16.model';
 export * from './shared-ui-item17.model';
+export * from './shared-ui-item18.model';
 export * from './shared-ui-svc0.service';
 export * from './shared-ui-svc1.service';
 export * from './shared-ui-svc2.service';

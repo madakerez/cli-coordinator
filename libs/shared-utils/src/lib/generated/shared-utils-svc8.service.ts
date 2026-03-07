@@ -1,6 +1,6 @@
-import { ISharedUtilsItem8, SharedUtilsItem8Model, SharedUtilsItem8Status, SharedUtilsItem8Filter } from './shared-utils-item8.model';
-import { ISharedUtilsItem9, SharedUtilsItem9Model, SharedUtilsItem9Status, SharedUtilsItem9Filter } from './shared-utils-item9.model';
-import { ISharedUtilsItem10, SharedUtilsItem10Model, SharedUtilsItem10Status, SharedUtilsItem10Filter } from './shared-utils-item10.model';
+import type { ISharedUtilsItem8, SharedUtilsItem8Status } from './shared-utils-item8.model';
+import type { ISharedUtilsItem9, SharedUtilsItem9Status } from './shared-utils-item9.model';
+import type { ISharedUtilsItem10, SharedUtilsItem10Status } from './shared-utils-item10.model';
 
 export interface SharedUtilsSvc8ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedUtilsSvc8CacheEntry<T> {
 }
 
 export class SharedUtilsSvc8Service {
-  private cache = new Map<string, SharedUtilsSvc8CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedUtilsSvc8CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedUtilsSvc8ServiceConfig;
 
-  constructor(private config: SharedUtilsSvc8ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedUtilsSvc8ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedUtilsSvc8Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedUtilsSvc8Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

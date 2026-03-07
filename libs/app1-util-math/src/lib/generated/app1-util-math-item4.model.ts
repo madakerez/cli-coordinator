@@ -61,36 +61,27 @@ export interface IApp1UtilMathItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1UtilMathItem4Model implements IApp1UtilMathItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1UtilMathItem4Status = undefined as any;
-  enabled: App1UtilMathItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1UtilMathItem4Status = undefined as any;
-  category: App1UtilMathItem4Type = undefined as any;
+export function createApp1UtilMathItem4(data: Partial<IApp1UtilMathItem4> = {}): IApp1UtilMathItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1UtilMathItem4;
+}
 
-  constructor(data?: Partial<IApp1UtilMathItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1UtilMathItem4(entity: IApp1UtilMathItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1UtilMathItem4 {
-    return { ...this } as IApp1UtilMathItem4;
-  }
-
-  clone(): App1UtilMathItem4Model {
-    return new App1UtilMathItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1UtilMathItem4(entity: IApp1UtilMathItem4): IApp1UtilMathItem4 {
+  return { ...entity };
 }

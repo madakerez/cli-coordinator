@@ -65,40 +65,27 @@ export interface ISharedNotificationsItem8Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedNotificationsItem8Model implements ISharedNotificationsItem8 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedNotificationsItem8Status = undefined as any;
-  enabled: SharedNotificationsItem8Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedNotificationsItem8Status = undefined as any;
-  category: SharedNotificationsItem8Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
+export function createSharedNotificationsItem8(data: Partial<ISharedNotificationsItem8> = {}): ISharedNotificationsItem8 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedNotificationsItem8;
+}
 
-  constructor(data?: Partial<ISharedNotificationsItem8>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedNotificationsItem8(entity: ISharedNotificationsItem8): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedNotificationsItem8 {
-    return { ...this } as ISharedNotificationsItem8;
-  }
-
-  clone(): SharedNotificationsItem8Model {
-    return new SharedNotificationsItem8Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedNotificationsItem8(entity: ISharedNotificationsItem8): ISharedNotificationsItem8 {
+  return { ...entity };
 }

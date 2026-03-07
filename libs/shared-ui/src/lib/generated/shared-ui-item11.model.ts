@@ -68,43 +68,27 @@ export interface ISharedUiItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedUiItem11Model implements ISharedUiItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedUiItem11Status = undefined as any;
-  enabled: SharedUiItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedUiItem11Status = undefined as any;
-  category: SharedUiItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedUiItem11Status = undefined as any;
-  status: SharedUiItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedUiItem11(data: Partial<ISharedUiItem11> = {}): ISharedUiItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedUiItem11;
+}
 
-  constructor(data?: Partial<ISharedUiItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedUiItem11(entity: ISharedUiItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedUiItem11 {
-    return { ...this } as ISharedUiItem11;
-  }
-
-  clone(): SharedUiItem11Model {
-    return new SharedUiItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedUiItem11(entity: ISharedUiItem11): ISharedUiItem11 {
+  return { ...entity };
 }

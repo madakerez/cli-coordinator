@@ -61,36 +61,27 @@ export interface IApp3FeatureCommentsItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureCommentsItem4Model implements IApp3FeatureCommentsItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureCommentsItem4Status = undefined as any;
-  enabled: App3FeatureCommentsItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureCommentsItem4Status = undefined as any;
-  category: App3FeatureCommentsItem4Type = undefined as any;
+export function createApp3FeatureCommentsItem4(data: Partial<IApp3FeatureCommentsItem4> = {}): IApp3FeatureCommentsItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureCommentsItem4;
+}
 
-  constructor(data?: Partial<IApp3FeatureCommentsItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureCommentsItem4(entity: IApp3FeatureCommentsItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureCommentsItem4 {
-    return { ...this } as IApp3FeatureCommentsItem4;
-  }
-
-  clone(): App3FeatureCommentsItem4Model {
-    return new App3FeatureCommentsItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureCommentsItem4(entity: IApp3FeatureCommentsItem4): IApp3FeatureCommentsItem4 {
+  return { ...entity };
 }

@@ -1,6 +1,6 @@
-import { IApp1FeatureFilesItem9, App1FeatureFilesItem9Model, App1FeatureFilesItem9Status, App1FeatureFilesItem9Filter } from './app1-feature-files-item9.model';
-import { IApp1FeatureFilesItem10, App1FeatureFilesItem10Model, App1FeatureFilesItem10Status, App1FeatureFilesItem10Filter } from './app1-feature-files-item10.model';
-import { IApp1FeatureFilesItem11, App1FeatureFilesItem11Model, App1FeatureFilesItem11Status, App1FeatureFilesItem11Filter } from './app1-feature-files-item11.model';
+import type { IApp1FeatureFilesItem9, App1FeatureFilesItem9Status } from './app1-feature-files-item9.model';
+import type { IApp1FeatureFilesItem10, App1FeatureFilesItem10Status } from './app1-feature-files-item10.model';
+import type { IApp1FeatureFilesItem11, App1FeatureFilesItem11Status } from './app1-feature-files-item11.model';
 
 export interface App1FeatureFilesSvc9ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1FeatureFilesSvc9CacheEntry<T> {
 }
 
 export class App1FeatureFilesSvc9Service {
-  private cache = new Map<string, App1FeatureFilesSvc9CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1FeatureFilesSvc9CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1FeatureFilesSvc9ServiceConfig;
 
-  constructor(private config: App1FeatureFilesSvc9ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1FeatureFilesSvc9ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1FeatureFilesSvc9Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1FeatureFilesSvc9Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

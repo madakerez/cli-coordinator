@@ -23,5 +23,3 @@ export * from './heavy-21.types';
 export * from './heavy-22.types';
 export * from './heavy-23.types';
 export * from './heavy-24.types';
-export * from './heavy-25.types';
-export * from './heavy-26.types';

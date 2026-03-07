@@ -46,3 +46,4 @@ export * from './app1-feature-chat-handler3.handler';
 export * from './app1-feature-chat-handler4.handler';
 export * from './app1-feature-chat-handler5.handler';
 export * from './app1-feature-chat-handler6.handler';
+export * from './app1-feature-chat-handler7.handler';

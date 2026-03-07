@@ -60,35 +60,27 @@ export interface IApp1UtilColorsItem3Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1UtilColorsItem3Model implements IApp1UtilColorsItem3 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1UtilColorsItem3Status = undefined as any;
-  enabled: App1UtilColorsItem3Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1UtilColorsItem3Status = undefined as any;
+export function createApp1UtilColorsItem3(data: Partial<IApp1UtilColorsItem3> = {}): IApp1UtilColorsItem3 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1UtilColorsItem3;
+}
 
-  constructor(data?: Partial<IApp1UtilColorsItem3>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1UtilColorsItem3(entity: IApp1UtilColorsItem3): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1UtilColorsItem3 {
-    return { ...this } as IApp1UtilColorsItem3;
-  }
-
-  clone(): App1UtilColorsItem3Model {
-    return new App1UtilColorsItem3Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1UtilColorsItem3(entity: IApp1UtilColorsItem3): IApp1UtilColorsItem3 {
+  return { ...entity };
 }

@@ -60,35 +60,27 @@ export interface IApp3FeatureCollaborationItem3Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureCollaborationItem3Model implements IApp3FeatureCollaborationItem3 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureCollaborationItem3Status = undefined as any;
-  enabled: App3FeatureCollaborationItem3Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureCollaborationItem3Status = undefined as any;
+export function createApp3FeatureCollaborationItem3(data: Partial<IApp3FeatureCollaborationItem3> = {}): IApp3FeatureCollaborationItem3 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureCollaborationItem3;
+}
 
-  constructor(data?: Partial<IApp3FeatureCollaborationItem3>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureCollaborationItem3(entity: IApp3FeatureCollaborationItem3): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureCollaborationItem3 {
-    return { ...this } as IApp3FeatureCollaborationItem3;
-  }
-
-  clone(): App3FeatureCollaborationItem3Model {
-    return new App3FeatureCollaborationItem3Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureCollaborationItem3(entity: IApp3FeatureCollaborationItem3): IApp3FeatureCollaborationItem3 {
+  return { ...entity };
 }

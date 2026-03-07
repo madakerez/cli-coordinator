@@ -61,36 +61,27 @@ export interface IApp4FeatureUsersItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureUsersItem4Model implements IApp4FeatureUsersItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureUsersItem4Status = undefined as any;
-  enabled: App4FeatureUsersItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App4FeatureUsersItem4Status = undefined as any;
-  category: App4FeatureUsersItem4Type = undefined as any;
+export function createApp4FeatureUsersItem4(data: Partial<IApp4FeatureUsersItem4> = {}): IApp4FeatureUsersItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureUsersItem4;
+}
 
-  constructor(data?: Partial<IApp4FeatureUsersItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureUsersItem4(entity: IApp4FeatureUsersItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureUsersItem4 {
-    return { ...this } as IApp4FeatureUsersItem4;
-  }
-
-  clone(): App4FeatureUsersItem4Model {
-    return new App4FeatureUsersItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureUsersItem4(entity: IApp4FeatureUsersItem4): IApp4FeatureUsersItem4 {
+  return { ...entity };
 }

@@ -4,4 +4,3 @@ export * from './heavy-2.types';
 export * from './heavy-3.types';
 export * from './heavy-4.types';
 export * from './heavy-5.types';
-export * from './heavy-6.types';

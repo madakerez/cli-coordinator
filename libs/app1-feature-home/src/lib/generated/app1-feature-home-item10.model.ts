@@ -67,42 +67,27 @@ export interface IApp1FeatureHomeItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureHomeItem10Model implements IApp1FeatureHomeItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureHomeItem10Status = undefined as any;
-  enabled: App1FeatureHomeItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureHomeItem10Status = undefined as any;
-  category: App1FeatureHomeItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: App1FeatureHomeItem10Status = undefined as any;
-  status: App1FeatureHomeItem10Type = undefined as any;
+export function createApp1FeatureHomeItem10(data: Partial<IApp1FeatureHomeItem10> = {}): IApp1FeatureHomeItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureHomeItem10;
+}
 
-  constructor(data?: Partial<IApp1FeatureHomeItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureHomeItem10(entity: IApp1FeatureHomeItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureHomeItem10 {
-    return { ...this } as IApp1FeatureHomeItem10;
-  }
-
-  clone(): App1FeatureHomeItem10Model {
-    return new App1FeatureHomeItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureHomeItem10(entity: IApp1FeatureHomeItem10): IApp1FeatureHomeItem10 {
+  return { ...entity };
 }

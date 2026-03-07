@@ -15,7 +15,7 @@ export type DeepPartialSharedTestingHeavy0<T> = {
     : T[P];
 };
 
-export type SharedTestingHeavy0Nested = Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, T>>>>>>>>>>>>>>>>>>>>;
+export type SharedTestingHeavy0Nested = Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, Promise<Array<Partial<Record<string, string>>>>>>>>>>>>>>>>>>>>;
 
 export type SharedTestingHeavy0Union =
   | { kind: 'SharedTestingHeavy0_variant_0'; data_0: string; nested_0: { value: number; items: Array<{ id: string; meta: Record<string, unknown> }> }; timestamp: Date }
@@ -44,21 +44,21 @@ export type ExtractSharedTestingHeavy0Kind<T extends SharedTestingHeavy0Union> =
 export type SharedTestingHeavy0ByKind<K extends SharedTestingHeavy0Union['kind']> = Extract<SharedTestingHeavy0Union, { kind: K }>;
 
 export type SharedTestingHeavy0MappedResult<T> = {
-    field0: T extends { field0: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field1: T extends { field1: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field2: T extends { field2: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field3: T extends { field3: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field4: T extends { field4: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field5: T extends { field5: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field6: T extends { field6: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field7: T extends { field7: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field8: T extends { field8: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field9: T extends { field9: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field10: T extends { field10: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field11: T extends { field11: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field12: T extends { field12: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field13: T extends { field13: infer U } ? U extends string ? Uppercase<U> : U : never;
-    field14: T extends { field14: infer U } ? U extends string ? Uppercase<U> : U : never;
+    field0: string;
+    field1: string;
+    field2: string;
+    field3: string;
+    field4: string;
+    field5: string;
+    field6: string;
+    field7: string;
+    field8: string;
+    field9: string;
+    field10: string;
+    field11: string;
+    field12: string;
+    field13: string;
+    field14: string;
 };
 
 export type SharedTestingHeavy0Conditional<T, U> =

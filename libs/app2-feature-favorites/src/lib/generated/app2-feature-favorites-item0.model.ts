@@ -57,32 +57,27 @@ export interface IApp2FeatureFavoritesItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App2FeatureFavoritesItem0Model implements IApp2FeatureFavoritesItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App2FeatureFavoritesItem0Status = undefined as any;
-  enabled: App2FeatureFavoritesItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp2FeatureFavoritesItem0(data: Partial<IApp2FeatureFavoritesItem0> = {}): IApp2FeatureFavoritesItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp2FeatureFavoritesItem0;
+}
 
-  constructor(data?: Partial<IApp2FeatureFavoritesItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp2FeatureFavoritesItem0(entity: IApp2FeatureFavoritesItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp2FeatureFavoritesItem0 {
-    return { ...this } as IApp2FeatureFavoritesItem0;
-  }
-
-  clone(): App2FeatureFavoritesItem0Model {
-    return new App2FeatureFavoritesItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp2FeatureFavoritesItem0(entity: IApp2FeatureFavoritesItem0): IApp2FeatureFavoritesItem0 {
+  return { ...entity };
 }

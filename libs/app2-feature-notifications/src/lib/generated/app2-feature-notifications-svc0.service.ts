@@ -1,6 +1,4 @@
-import { IApp2FeatureNotificationsItem0, App2FeatureNotificationsItem0Model, App2FeatureNotificationsItem0Status, App2FeatureNotificationsItem0Filter } from './app2-feature-notifications-item0.model';
-import { IApp2FeatureNotificationsItem1, App2FeatureNotificationsItem1Model, App2FeatureNotificationsItem1Status, App2FeatureNotificationsItem1Filter } from './app2-feature-notifications-item1.model';
-import { IApp2FeatureNotificationsItem2, App2FeatureNotificationsItem2Model, App2FeatureNotificationsItem2Status, App2FeatureNotificationsItem2Filter } from './app2-feature-notifications-item2.model';
+import type { IApp2FeatureNotificationsItem0, App2FeatureNotificationsItem0Status } from './app2-feature-notifications-item0.model';
 
 export interface App2FeatureNotificationsSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +15,20 @@ export interface App2FeatureNotificationsSvc0CacheEntry<T> {
 }
 
 export class App2FeatureNotificationsSvc0Service {
-  private cache = new Map<string, App2FeatureNotificationsSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App2FeatureNotificationsSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App2FeatureNotificationsSvc0ServiceConfig;
 
-  constructor(private config: App2FeatureNotificationsSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App2FeatureNotificationsSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +38,7 @@ export class App2FeatureNotificationsSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +66,6 @@ export class App2FeatureNotificationsSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

@@ -1,6 +1,6 @@
-import { ISharedFeatureFlagsItem10, SharedFeatureFlagsItem10Model, SharedFeatureFlagsItem10Status, SharedFeatureFlagsItem10Filter } from './shared-feature-flags-item10.model';
-import { ISharedFeatureFlagsItem11, SharedFeatureFlagsItem11Model, SharedFeatureFlagsItem11Status, SharedFeatureFlagsItem11Filter } from './shared-feature-flags-item11.model';
-import { ISharedFeatureFlagsItem12, SharedFeatureFlagsItem12Model, SharedFeatureFlagsItem12Status, SharedFeatureFlagsItem12Filter } from './shared-feature-flags-item12.model';
+import type { ISharedFeatureFlagsItem10, SharedFeatureFlagsItem10Status } from './shared-feature-flags-item10.model';
+import type { ISharedFeatureFlagsItem11, SharedFeatureFlagsItem11Status } from './shared-feature-flags-item11.model';
+import type { ISharedFeatureFlagsItem12, SharedFeatureFlagsItem12Status } from './shared-feature-flags-item12.model';
 
 export interface SharedFeatureFlagsSvc10ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedFeatureFlagsSvc10CacheEntry<T> {
 }
 
 export class SharedFeatureFlagsSvc10Service {
-  private cache = new Map<string, SharedFeatureFlagsSvc10CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedFeatureFlagsSvc10CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedFeatureFlagsSvc10ServiceConfig;
 
-  constructor(private config: SharedFeatureFlagsSvc10ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedFeatureFlagsSvc10ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedFeatureFlagsSvc10Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedFeatureFlagsSvc10Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

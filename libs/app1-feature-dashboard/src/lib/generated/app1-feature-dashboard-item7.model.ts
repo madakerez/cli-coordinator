@@ -64,39 +64,27 @@ export interface IApp1FeatureDashboardItem7Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureDashboardItem7Model implements IApp1FeatureDashboardItem7 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureDashboardItem7Status = undefined as any;
-  enabled: App1FeatureDashboardItem7Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureDashboardItem7Status = undefined as any;
-  category: App1FeatureDashboardItem7Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
+export function createApp1FeatureDashboardItem7(data: Partial<IApp1FeatureDashboardItem7> = {}): IApp1FeatureDashboardItem7 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureDashboardItem7;
+}
 
-  constructor(data?: Partial<IApp1FeatureDashboardItem7>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureDashboardItem7(entity: IApp1FeatureDashboardItem7): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureDashboardItem7 {
-    return { ...this } as IApp1FeatureDashboardItem7;
-  }
-
-  clone(): App1FeatureDashboardItem7Model {
-    return new App1FeatureDashboardItem7Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureDashboardItem7(entity: IApp1FeatureDashboardItem7): IApp1FeatureDashboardItem7 {
+  return { ...entity };
 }

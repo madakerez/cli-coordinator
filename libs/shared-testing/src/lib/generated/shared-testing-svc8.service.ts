@@ -1,6 +1,6 @@
-import { ISharedTestingItem8, SharedTestingItem8Model, SharedTestingItem8Status, SharedTestingItem8Filter } from './shared-testing-item8.model';
-import { ISharedTestingItem9, SharedTestingItem9Model, SharedTestingItem9Status, SharedTestingItem9Filter } from './shared-testing-item9.model';
-import { ISharedTestingItem10, SharedTestingItem10Model, SharedTestingItem10Status, SharedTestingItem10Filter } from './shared-testing-item10.model';
+import type { ISharedTestingItem8, SharedTestingItem8Status } from './shared-testing-item8.model';
+import type { ISharedTestingItem9, SharedTestingItem9Status } from './shared-testing-item9.model';
+import type { ISharedTestingItem10, SharedTestingItem10Status } from './shared-testing-item10.model';
 
 export interface SharedTestingSvc8ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedTestingSvc8CacheEntry<T> {
 }
 
 export class SharedTestingSvc8Service {
-  private cache = new Map<string, SharedTestingSvc8CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedTestingSvc8CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedTestingSvc8ServiceConfig;
 
-  constructor(private config: SharedTestingSvc8ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedTestingSvc8ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedTestingSvc8Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedTestingSvc8Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

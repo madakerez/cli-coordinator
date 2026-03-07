@@ -64,39 +64,27 @@ export interface IApp1FeatureExportItem7Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureExportItem7Model implements IApp1FeatureExportItem7 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureExportItem7Status = undefined as any;
-  enabled: App1FeatureExportItem7Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureExportItem7Status = undefined as any;
-  category: App1FeatureExportItem7Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
+export function createApp1FeatureExportItem7(data: Partial<IApp1FeatureExportItem7> = {}): IApp1FeatureExportItem7 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureExportItem7;
+}
 
-  constructor(data?: Partial<IApp1FeatureExportItem7>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureExportItem7(entity: IApp1FeatureExportItem7): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureExportItem7 {
-    return { ...this } as IApp1FeatureExportItem7;
-  }
-
-  clone(): App1FeatureExportItem7Model {
-    return new App1FeatureExportItem7Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureExportItem7(entity: IApp1FeatureExportItem7): IApp1FeatureExportItem7 {
+  return { ...entity };
 }

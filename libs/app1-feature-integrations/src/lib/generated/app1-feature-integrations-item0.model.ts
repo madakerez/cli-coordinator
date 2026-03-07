@@ -57,32 +57,27 @@ export interface IApp1FeatureIntegrationsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureIntegrationsItem0Model implements IApp1FeatureIntegrationsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureIntegrationsItem0Status = undefined as any;
-  enabled: App1FeatureIntegrationsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createApp1FeatureIntegrationsItem0(data: Partial<IApp1FeatureIntegrationsItem0> = {}): IApp1FeatureIntegrationsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureIntegrationsItem0;
+}
 
-  constructor(data?: Partial<IApp1FeatureIntegrationsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureIntegrationsItem0(entity: IApp1FeatureIntegrationsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureIntegrationsItem0 {
-    return { ...this } as IApp1FeatureIntegrationsItem0;
-  }
-
-  clone(): App1FeatureIntegrationsItem0Model {
-    return new App1FeatureIntegrationsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureIntegrationsItem0(entity: IApp1FeatureIntegrationsItem0): IApp1FeatureIntegrationsItem0 {
+  return { ...entity };
 }

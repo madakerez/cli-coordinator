@@ -1,6 +1,6 @@
-import { ISharedAnalyticsItem4, SharedAnalyticsItem4Model, SharedAnalyticsItem4Status, SharedAnalyticsItem4Filter } from './shared-analytics-item4.model';
-import { ISharedAnalyticsItem5, SharedAnalyticsItem5Model, SharedAnalyticsItem5Status, SharedAnalyticsItem5Filter } from './shared-analytics-item5.model';
-import { ISharedAnalyticsItem6, SharedAnalyticsItem6Model, SharedAnalyticsItem6Status, SharedAnalyticsItem6Filter } from './shared-analytics-item6.model';
+import type { ISharedAnalyticsItem4, SharedAnalyticsItem4Status } from './shared-analytics-item4.model';
+import type { ISharedAnalyticsItem5, SharedAnalyticsItem5Status } from './shared-analytics-item5.model';
+import type { ISharedAnalyticsItem6, SharedAnalyticsItem6Status } from './shared-analytics-item6.model';
 
 export interface SharedAnalyticsSvc4ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedAnalyticsSvc4CacheEntry<T> {
 }
 
 export class SharedAnalyticsSvc4Service {
-  private cache = new Map<string, SharedAnalyticsSvc4CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedAnalyticsSvc4CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedAnalyticsSvc4ServiceConfig;
 
-  constructor(private config: SharedAnalyticsSvc4ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedAnalyticsSvc4ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedAnalyticsSvc4Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedAnalyticsSvc4Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

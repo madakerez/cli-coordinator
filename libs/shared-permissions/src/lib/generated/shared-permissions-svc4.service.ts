@@ -1,6 +1,6 @@
-import { ISharedPermissionsItem4, SharedPermissionsItem4Model, SharedPermissionsItem4Status, SharedPermissionsItem4Filter } from './shared-permissions-item4.model';
-import { ISharedPermissionsItem5, SharedPermissionsItem5Model, SharedPermissionsItem5Status, SharedPermissionsItem5Filter } from './shared-permissions-item5.model';
-import { ISharedPermissionsItem6, SharedPermissionsItem6Model, SharedPermissionsItem6Status, SharedPermissionsItem6Filter } from './shared-permissions-item6.model';
+import type { ISharedPermissionsItem4, SharedPermissionsItem4Status } from './shared-permissions-item4.model';
+import type { ISharedPermissionsItem5, SharedPermissionsItem5Status } from './shared-permissions-item5.model';
+import type { ISharedPermissionsItem6, SharedPermissionsItem6Status } from './shared-permissions-item6.model';
 
 export interface SharedPermissionsSvc4ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedPermissionsSvc4CacheEntry<T> {
 }
 
 export class SharedPermissionsSvc4Service {
-  private cache = new Map<string, SharedPermissionsSvc4CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedPermissionsSvc4CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedPermissionsSvc4ServiceConfig;
 
-  constructor(private config: SharedPermissionsSvc4ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedPermissionsSvc4ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedPermissionsSvc4Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedPermissionsSvc4Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

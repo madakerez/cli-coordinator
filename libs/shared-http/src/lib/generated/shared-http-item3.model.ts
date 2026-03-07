@@ -60,35 +60,27 @@ export interface ISharedHttpItem3Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedHttpItem3Model implements ISharedHttpItem3 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedHttpItem3Status = undefined as any;
-  enabled: SharedHttpItem3Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedHttpItem3Status = undefined as any;
+export function createSharedHttpItem3(data: Partial<ISharedHttpItem3> = {}): ISharedHttpItem3 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedHttpItem3;
+}
 
-  constructor(data?: Partial<ISharedHttpItem3>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedHttpItem3(entity: ISharedHttpItem3): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedHttpItem3 {
-    return { ...this } as ISharedHttpItem3;
-  }
-
-  clone(): SharedHttpItem3Model {
-    return new SharedHttpItem3Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedHttpItem3(entity: ISharedHttpItem3): ISharedHttpItem3 {
+  return { ...entity };
 }

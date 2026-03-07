@@ -23,4 +23,3 @@ export * from './app1-data-access-widget4.component';
 export * from './app1-data-access-handler0.handler';
 export * from './app1-data-access-handler1.handler';
 export * from './app1-data-access-handler2.handler';
-export * from './app1-data-access-handler3.handler';

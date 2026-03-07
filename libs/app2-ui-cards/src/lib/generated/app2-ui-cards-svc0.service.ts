@@ -1,6 +1,6 @@
-import { IApp2UiCardsItem0, App2UiCardsItem0Model, App2UiCardsItem0Status, App2UiCardsItem0Filter } from './app2-ui-cards-item0.model';
-import { IApp2UiCardsItem1, App2UiCardsItem1Model, App2UiCardsItem1Status, App2UiCardsItem1Filter } from './app2-ui-cards-item1.model';
-import { IApp2UiCardsItem2, App2UiCardsItem2Model, App2UiCardsItem2Status, App2UiCardsItem2Filter } from './app2-ui-cards-item2.model';
+import type { IApp2UiCardsItem0, App2UiCardsItem0Status } from './app2-ui-cards-item0.model';
+import type { IApp2UiCardsItem1, App2UiCardsItem1Status } from './app2-ui-cards-item1.model';
+import type { IApp2UiCardsItem2, App2UiCardsItem2Status } from './app2-ui-cards-item2.model';
 
 export interface App2UiCardsSvc0ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App2UiCardsSvc0CacheEntry<T> {
 }
 
 export class App2UiCardsSvc0Service {
-  private cache = new Map<string, App2UiCardsSvc0CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App2UiCardsSvc0CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App2UiCardsSvc0ServiceConfig;
 
-  constructor(private config: App2UiCardsSvc0ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App2UiCardsSvc0ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App2UiCardsSvc0Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App2UiCardsSvc0Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

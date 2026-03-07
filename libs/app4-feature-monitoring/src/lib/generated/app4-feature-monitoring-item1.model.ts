@@ -58,33 +58,27 @@ export interface IApp4FeatureMonitoringItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App4FeatureMonitoringItem1Model implements IApp4FeatureMonitoringItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App4FeatureMonitoringItem1Status = undefined as any;
-  enabled: App4FeatureMonitoringItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp4FeatureMonitoringItem1(data: Partial<IApp4FeatureMonitoringItem1> = {}): IApp4FeatureMonitoringItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureMonitoringItem1;
+}
 
-  constructor(data?: Partial<IApp4FeatureMonitoringItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp4FeatureMonitoringItem1(entity: IApp4FeatureMonitoringItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp4FeatureMonitoringItem1 {
-    return { ...this } as IApp4FeatureMonitoringItem1;
-  }
-
-  clone(): App4FeatureMonitoringItem1Model {
-    return new App4FeatureMonitoringItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp4FeatureMonitoringItem1(entity: IApp4FeatureMonitoringItem1): IApp4FeatureMonitoringItem1 {
+  return { ...entity };
 }

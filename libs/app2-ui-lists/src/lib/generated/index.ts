@@ -5,5 +5,3 @@ export * from './app2-ui-lists-util0.utils';
 export * from './app2-ui-lists-widget0.component';
 export * from './app2-ui-lists-handler0.handler';
 export * from './app2-ui-lists-handler1.handler';
-export * from './app2-ui-lists-handler2.handler';
-export * from './app2-ui-lists-handler3.handler';

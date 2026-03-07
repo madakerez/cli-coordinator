@@ -1,6 +1,6 @@
-import { IApp1FeatureTagsItem2, App1FeatureTagsItem2Model, App1FeatureTagsItem2Status, App1FeatureTagsItem2Filter } from './app1-feature-tags-item2.model';
-import { IApp1FeatureTagsItem3, App1FeatureTagsItem3Model, App1FeatureTagsItem3Status, App1FeatureTagsItem3Filter } from './app1-feature-tags-item3.model';
-import { IApp1FeatureTagsItem4, App1FeatureTagsItem4Model, App1FeatureTagsItem4Status, App1FeatureTagsItem4Filter } from './app1-feature-tags-item4.model';
+import type { IApp1FeatureTagsItem2, App1FeatureTagsItem2Status } from './app1-feature-tags-item2.model';
+import type { IApp1FeatureTagsItem3, App1FeatureTagsItem3Status } from './app1-feature-tags-item3.model';
+import type { IApp1FeatureTagsItem4, App1FeatureTagsItem4Status } from './app1-feature-tags-item4.model';
 
 export interface App1FeatureTagsSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1FeatureTagsSvc2CacheEntry<T> {
 }
 
 export class App1FeatureTagsSvc2Service {
-  private cache = new Map<string, App1FeatureTagsSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1FeatureTagsSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1FeatureTagsSvc2ServiceConfig;
 
-  constructor(private config: App1FeatureTagsSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1FeatureTagsSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1FeatureTagsSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1FeatureTagsSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

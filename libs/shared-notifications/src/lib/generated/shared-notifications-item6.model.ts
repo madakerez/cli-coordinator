@@ -63,38 +63,27 @@ export interface ISharedNotificationsItem6Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedNotificationsItem6Model implements ISharedNotificationsItem6 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedNotificationsItem6Status = undefined as any;
-  enabled: SharedNotificationsItem6Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedNotificationsItem6Status = undefined as any;
-  category: SharedNotificationsItem6Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
+export function createSharedNotificationsItem6(data: Partial<ISharedNotificationsItem6> = {}): ISharedNotificationsItem6 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedNotificationsItem6;
+}
 
-  constructor(data?: Partial<ISharedNotificationsItem6>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedNotificationsItem6(entity: ISharedNotificationsItem6): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedNotificationsItem6 {
-    return { ...this } as ISharedNotificationsItem6;
-  }
-
-  clone(): SharedNotificationsItem6Model {
-    return new SharedNotificationsItem6Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedNotificationsItem6(entity: ISharedNotificationsItem6): ISharedNotificationsItem6 {
+  return { ...entity };
 }

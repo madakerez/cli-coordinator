@@ -57,32 +57,27 @@ export interface ISharedNotificationsItem0Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedNotificationsItem0Model implements ISharedNotificationsItem0 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedNotificationsItem0Status = undefined as any;
-  enabled: SharedNotificationsItem0Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
+export function createSharedNotificationsItem0(data: Partial<ISharedNotificationsItem0> = {}): ISharedNotificationsItem0 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedNotificationsItem0;
+}
 
-  constructor(data?: Partial<ISharedNotificationsItem0>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedNotificationsItem0(entity: ISharedNotificationsItem0): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedNotificationsItem0 {
-    return { ...this } as ISharedNotificationsItem0;
-  }
-
-  clone(): SharedNotificationsItem0Model {
-    return new SharedNotificationsItem0Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedNotificationsItem0(entity: ISharedNotificationsItem0): ISharedNotificationsItem0 {
+  return { ...entity };
 }

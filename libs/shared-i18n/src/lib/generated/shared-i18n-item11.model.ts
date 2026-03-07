@@ -68,43 +68,27 @@ export interface ISharedI18nItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedI18nItem11Model implements ISharedI18nItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedI18nItem11Status = undefined as any;
-  enabled: SharedI18nItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedI18nItem11Status = undefined as any;
-  category: SharedI18nItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedI18nItem11Status = undefined as any;
-  status: SharedI18nItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedI18nItem11(data: Partial<ISharedI18nItem11> = {}): ISharedI18nItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedI18nItem11;
+}
 
-  constructor(data?: Partial<ISharedI18nItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedI18nItem11(entity: ISharedI18nItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedI18nItem11 {
-    return { ...this } as ISharedI18nItem11;
-  }
-
-  clone(): SharedI18nItem11Model {
-    return new SharedI18nItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedI18nItem11(entity: ISharedI18nItem11): ISharedI18nItem11 {
+  return { ...entity };
 }

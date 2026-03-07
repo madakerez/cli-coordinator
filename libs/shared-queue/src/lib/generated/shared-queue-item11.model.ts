@@ -68,43 +68,27 @@ export interface ISharedQueueItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedQueueItem11Model implements ISharedQueueItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedQueueItem11Status = undefined as any;
-  enabled: SharedQueueItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedQueueItem11Status = undefined as any;
-  category: SharedQueueItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedQueueItem11Status = undefined as any;
-  status: SharedQueueItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedQueueItem11(data: Partial<ISharedQueueItem11> = {}): ISharedQueueItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedQueueItem11;
+}
 
-  constructor(data?: Partial<ISharedQueueItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedQueueItem11(entity: ISharedQueueItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedQueueItem11 {
-    return { ...this } as ISharedQueueItem11;
-  }
-
-  clone(): SharedQueueItem11Model {
-    return new SharedQueueItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedQueueItem11(entity: ISharedQueueItem11): ISharedQueueItem11 {
+  return { ...entity };
 }

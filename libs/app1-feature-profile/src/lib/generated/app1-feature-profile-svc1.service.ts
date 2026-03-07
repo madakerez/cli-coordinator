@@ -1,6 +1,6 @@
-import { IApp1FeatureProfileItem1, App1FeatureProfileItem1Model, App1FeatureProfileItem1Status, App1FeatureProfileItem1Filter } from './app1-feature-profile-item1.model';
-import { IApp1FeatureProfileItem2, App1FeatureProfileItem2Model, App1FeatureProfileItem2Status, App1FeatureProfileItem2Filter } from './app1-feature-profile-item2.model';
-import { IApp1FeatureProfileItem3, App1FeatureProfileItem3Model, App1FeatureProfileItem3Status, App1FeatureProfileItem3Filter } from './app1-feature-profile-item3.model';
+import type { IApp1FeatureProfileItem1, App1FeatureProfileItem1Status } from './app1-feature-profile-item1.model';
+import type { IApp1FeatureProfileItem2, App1FeatureProfileItem2Status } from './app1-feature-profile-item2.model';
+import type { IApp1FeatureProfileItem3, App1FeatureProfileItem3Status } from './app1-feature-profile-item3.model';
 
 export interface App1FeatureProfileSvc1ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1FeatureProfileSvc1CacheEntry<T> {
 }
 
 export class App1FeatureProfileSvc1Service {
-  private cache = new Map<string, App1FeatureProfileSvc1CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1FeatureProfileSvc1CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1FeatureProfileSvc1ServiceConfig;
 
-  constructor(private config: App1FeatureProfileSvc1ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1FeatureProfileSvc1ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1FeatureProfileSvc1Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1FeatureProfileSvc1Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

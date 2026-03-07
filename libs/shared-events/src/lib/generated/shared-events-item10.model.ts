@@ -67,42 +67,27 @@ export interface ISharedEventsItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedEventsItem10Model implements ISharedEventsItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedEventsItem10Status = undefined as any;
-  enabled: SharedEventsItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedEventsItem10Status = undefined as any;
-  category: SharedEventsItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedEventsItem10Status = undefined as any;
-  status: SharedEventsItem10Type = undefined as any;
+export function createSharedEventsItem10(data: Partial<ISharedEventsItem10> = {}): ISharedEventsItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedEventsItem10;
+}
 
-  constructor(data?: Partial<ISharedEventsItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedEventsItem10(entity: ISharedEventsItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedEventsItem10 {
-    return { ...this } as ISharedEventsItem10;
-  }
-
-  clone(): SharedEventsItem10Model {
-    return new SharedEventsItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedEventsItem10(entity: ISharedEventsItem10): ISharedEventsItem10 {
+  return { ...entity };
 }

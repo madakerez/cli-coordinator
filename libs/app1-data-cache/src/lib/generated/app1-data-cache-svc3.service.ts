@@ -1,6 +1,6 @@
-import { IApp1DataCacheItem3, App1DataCacheItem3Model, App1DataCacheItem3Status, App1DataCacheItem3Filter } from './app1-data-cache-item3.model';
-import { IApp1DataCacheItem4, App1DataCacheItem4Model, App1DataCacheItem4Status, App1DataCacheItem4Filter } from './app1-data-cache-item4.model';
-import { IApp1DataCacheItem5, App1DataCacheItem5Model, App1DataCacheItem5Status, App1DataCacheItem5Filter } from './app1-data-cache-item5.model';
+import type { IApp1DataCacheItem3, App1DataCacheItem3Status } from './app1-data-cache-item3.model';
+import type { IApp1DataCacheItem4, App1DataCacheItem4Status } from './app1-data-cache-item4.model';
+import type { IApp1DataCacheItem5, App1DataCacheItem5Status } from './app1-data-cache-item5.model';
 
 export interface App1DataCacheSvc3ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App1DataCacheSvc3CacheEntry<T> {
 }
 
 export class App1DataCacheSvc3Service {
-  private cache = new Map<string, App1DataCacheSvc3CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App1DataCacheSvc3CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App1DataCacheSvc3ServiceConfig;
 
-  constructor(private config: App1DataCacheSvc3ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App1DataCacheSvc3ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App1DataCacheSvc3Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App1DataCacheSvc3Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

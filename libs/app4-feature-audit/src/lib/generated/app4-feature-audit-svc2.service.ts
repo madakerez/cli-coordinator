@@ -1,6 +1,6 @@
-import { IApp4FeatureAuditItem2, App4FeatureAuditItem2Model, App4FeatureAuditItem2Status, App4FeatureAuditItem2Filter } from './app4-feature-audit-item2.model';
-import { IApp4FeatureAuditItem3, App4FeatureAuditItem3Model, App4FeatureAuditItem3Status, App4FeatureAuditItem3Filter } from './app4-feature-audit-item3.model';
-import { IApp4FeatureAuditItem4, App4FeatureAuditItem4Model, App4FeatureAuditItem4Status, App4FeatureAuditItem4Filter } from './app4-feature-audit-item4.model';
+import type { IApp4FeatureAuditItem2, App4FeatureAuditItem2Status } from './app4-feature-audit-item2.model';
+import type { IApp4FeatureAuditItem3, App4FeatureAuditItem3Status } from './app4-feature-audit-item3.model';
+import type { IApp4FeatureAuditItem4, App4FeatureAuditItem4Status } from './app4-feature-audit-item4.model';
 
 export interface App4FeatureAuditSvc2ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface App4FeatureAuditSvc2CacheEntry<T> {
 }
 
 export class App4FeatureAuditSvc2Service {
-  private cache = new Map<string, App4FeatureAuditSvc2CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, App4FeatureAuditSvc2CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: App4FeatureAuditSvc2ServiceConfig;
 
-  constructor(private config: App4FeatureAuditSvc2ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: App4FeatureAuditSvc2ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class App4FeatureAuditSvc2Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class App4FeatureAuditSvc2Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

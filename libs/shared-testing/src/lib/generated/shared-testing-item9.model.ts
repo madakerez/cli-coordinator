@@ -66,41 +66,27 @@ export interface ISharedTestingItem9Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedTestingItem9Model implements ISharedTestingItem9 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedTestingItem9Status = undefined as any;
-  enabled: SharedTestingItem9Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedTestingItem9Status = undefined as any;
-  category: SharedTestingItem9Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedTestingItem9Status = undefined as any;
+export function createSharedTestingItem9(data: Partial<ISharedTestingItem9> = {}): ISharedTestingItem9 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedTestingItem9;
+}
 
-  constructor(data?: Partial<ISharedTestingItem9>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedTestingItem9(entity: ISharedTestingItem9): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedTestingItem9 {
-    return { ...this } as ISharedTestingItem9;
-  }
-
-  clone(): SharedTestingItem9Model {
-    return new SharedTestingItem9Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedTestingItem9(entity: ISharedTestingItem9): ISharedTestingItem9 {
+  return { ...entity };
 }

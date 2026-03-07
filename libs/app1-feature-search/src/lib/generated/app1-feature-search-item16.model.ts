@@ -61,36 +61,27 @@ export interface IApp1FeatureSearchItem16Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureSearchItem16Model implements IApp1FeatureSearchItem16 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureSearchItem16Status = undefined as any;
-  enabled: App1FeatureSearchItem16Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App1FeatureSearchItem16Status = undefined as any;
-  category: App1FeatureSearchItem16Type = undefined as any;
+export function createApp1FeatureSearchItem16(data: Partial<IApp1FeatureSearchItem16> = {}): IApp1FeatureSearchItem16 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureSearchItem16;
+}
 
-  constructor(data?: Partial<IApp1FeatureSearchItem16>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureSearchItem16(entity: IApp1FeatureSearchItem16): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureSearchItem16 {
-    return { ...this } as IApp1FeatureSearchItem16;
-  }
-
-  clone(): App1FeatureSearchItem16Model {
-    return new App1FeatureSearchItem16Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureSearchItem16(entity: IApp1FeatureSearchItem16): IApp1FeatureSearchItem16 {
+  return { ...entity };
 }

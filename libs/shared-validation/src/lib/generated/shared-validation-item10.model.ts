@@ -67,42 +67,27 @@ export interface ISharedValidationItem10Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedValidationItem10Model implements ISharedValidationItem10 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedValidationItem10Status = undefined as any;
-  enabled: SharedValidationItem10Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedValidationItem10Status = undefined as any;
-  category: SharedValidationItem10Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedValidationItem10Status = undefined as any;
-  status: SharedValidationItem10Type = undefined as any;
+export function createSharedValidationItem10(data: Partial<ISharedValidationItem10> = {}): ISharedValidationItem10 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedValidationItem10;
+}
 
-  constructor(data?: Partial<ISharedValidationItem10>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedValidationItem10(entity: ISharedValidationItem10): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedValidationItem10 {
-    return { ...this } as ISharedValidationItem10;
-  }
-
-  clone(): SharedValidationItem10Model {
-    return new SharedValidationItem10Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedValidationItem10(entity: ISharedValidationItem10): ISharedValidationItem10 {
+  return { ...entity };
 }

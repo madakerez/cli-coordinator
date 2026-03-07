@@ -9,3 +9,4 @@ export * from './app2-feature-detail-widget0.component';
 export * from './app2-feature-detail-widget1.component';
 export * from './app2-feature-detail-handler0.handler';
 export * from './app2-feature-detail-handler1.handler';
+export * from './app2-feature-detail-handler2.handler';

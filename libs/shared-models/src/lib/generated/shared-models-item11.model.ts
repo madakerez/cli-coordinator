@@ -68,43 +68,27 @@ export interface ISharedModelsItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedModelsItem11Model implements ISharedModelsItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedModelsItem11Status = undefined as any;
-  enabled: SharedModelsItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedModelsItem11Status = undefined as any;
-  category: SharedModelsItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedModelsItem11Status = undefined as any;
-  status: SharedModelsItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedModelsItem11(data: Partial<ISharedModelsItem11> = {}): ISharedModelsItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedModelsItem11;
+}
 
-  constructor(data?: Partial<ISharedModelsItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedModelsItem11(entity: ISharedModelsItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedModelsItem11 {
-    return { ...this } as ISharedModelsItem11;
-  }
-
-  clone(): SharedModelsItem11Model {
-    return new SharedModelsItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedModelsItem11(entity: ISharedModelsItem11): ISharedModelsItem11 {
+  return { ...entity };
 }

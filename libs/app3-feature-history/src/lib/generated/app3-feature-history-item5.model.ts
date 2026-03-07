@@ -62,37 +62,27 @@ export interface IApp3FeatureHistoryItem5Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App3FeatureHistoryItem5Model implements IApp3FeatureHistoryItem5 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App3FeatureHistoryItem5Status = undefined as any;
-  enabled: App3FeatureHistoryItem5Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: App3FeatureHistoryItem5Status = undefined as any;
-  category: App3FeatureHistoryItem5Type = undefined as any;
-  tags: string = undefined as any;
+export function createApp3FeatureHistoryItem5(data: Partial<IApp3FeatureHistoryItem5> = {}): IApp3FeatureHistoryItem5 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureHistoryItem5;
+}
 
-  constructor(data?: Partial<IApp3FeatureHistoryItem5>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp3FeatureHistoryItem5(entity: IApp3FeatureHistoryItem5): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp3FeatureHistoryItem5 {
-    return { ...this } as IApp3FeatureHistoryItem5;
-  }
-
-  clone(): App3FeatureHistoryItem5Model {
-    return new App3FeatureHistoryItem5Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp3FeatureHistoryItem5(entity: IApp3FeatureHistoryItem5): IApp3FeatureHistoryItem5 {
+  return { ...entity };
 }

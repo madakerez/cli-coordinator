@@ -1,6 +1,6 @@
-import { ISharedValidationItem4, SharedValidationItem4Model, SharedValidationItem4Status, SharedValidationItem4Filter } from './shared-validation-item4.model';
-import { ISharedValidationItem5, SharedValidationItem5Model, SharedValidationItem5Status, SharedValidationItem5Filter } from './shared-validation-item5.model';
-import { ISharedValidationItem6, SharedValidationItem6Model, SharedValidationItem6Status, SharedValidationItem6Filter } from './shared-validation-item6.model';
+import type { ISharedValidationItem4, SharedValidationItem4Status } from './shared-validation-item4.model';
+import type { ISharedValidationItem5, SharedValidationItem5Status } from './shared-validation-item5.model';
+import type { ISharedValidationItem6, SharedValidationItem6Status } from './shared-validation-item6.model';
 
 export interface SharedValidationSvc4ServiceConfig {
   baseUrl: string;
@@ -17,17 +17,20 @@ export interface SharedValidationSvc4CacheEntry<T> {
 }
 
 export class SharedValidationSvc4Service {
-  private cache = new Map<string, SharedValidationSvc4CacheEntry<unknown>>();
-  private requestQueue: Array<() => Promise<void>> = [];
-  private processing = false;
+  cache = new Map<string, SharedValidationSvc4CacheEntry<unknown>>();
+  requestQueue: Array<() => Promise<void>> = [];
+  processing = false;
+  config: SharedValidationSvc4ServiceConfig;
 
-  constructor(private config: SharedValidationSvc4ServiceConfig) {}
-
-  private getCacheKey(method: string, params: Record<string, unknown>): string {
-    return `${method}:${JSON.stringify(params)}`;
+  constructor(config: SharedValidationSvc4ServiceConfig) {
+    this.config = config;
   }
 
-  private getCached<T>(key: string): T | null {
+  getCacheKey(method: string, params: Record<string, unknown>): string {
+    return `${this.config.baseUrl}/${method}:${JSON.stringify(params)}`;
+  }
+
+  getCached<T>(key: string): T | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
     if (Date.now() - entry.timestamp > entry.ttl) {
@@ -37,7 +40,7 @@ export class SharedValidationSvc4Service {
     return entry.data as T;
   }
 
-  private setCache<T>(key: string, data: T, ttl = 60000): void {
+  setCache<T>(key: string, data: T, ttl = 60000): void {
     this.cache.set(key, { data, timestamp: Date.now(), ttl, key });
     if (this.cache.size > 1000) {
       const oldest = [...this.cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
@@ -65,6 +68,6 @@ export class SharedValidationSvc4Service {
 
   async healthCheck(): Promise<{ status: string; latency: number }> {
     const start = Date.now();
-    return { status: 'ok', latency: Date.now() - start };
+    return { status: this.config.baseUrl, latency: Date.now() - start };
   }
 }

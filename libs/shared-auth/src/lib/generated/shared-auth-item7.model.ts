@@ -64,39 +64,27 @@ export interface ISharedAuthItem7Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedAuthItem7Model implements ISharedAuthItem7 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedAuthItem7Status = undefined as any;
-  enabled: SharedAuthItem7Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedAuthItem7Status = undefined as any;
-  category: SharedAuthItem7Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
+export function createSharedAuthItem7(data: Partial<ISharedAuthItem7> = {}): ISharedAuthItem7 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedAuthItem7;
+}
 
-  constructor(data?: Partial<ISharedAuthItem7>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedAuthItem7(entity: ISharedAuthItem7): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedAuthItem7 {
-    return { ...this } as ISharedAuthItem7;
-  }
-
-  clone(): SharedAuthItem7Model {
-    return new SharedAuthItem7Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedAuthItem7(entity: ISharedAuthItem7): ISharedAuthItem7 {
+  return { ...entity };
 }

@@ -58,33 +58,27 @@ export interface ISharedPermissionsItem13Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedPermissionsItem13Model implements ISharedPermissionsItem13 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedPermissionsItem13Status = undefined as any;
-  enabled: SharedPermissionsItem13Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createSharedPermissionsItem13(data: Partial<ISharedPermissionsItem13> = {}): ISharedPermissionsItem13 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedPermissionsItem13;
+}
 
-  constructor(data?: Partial<ISharedPermissionsItem13>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedPermissionsItem13(entity: ISharedPermissionsItem13): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedPermissionsItem13 {
-    return { ...this } as ISharedPermissionsItem13;
-  }
-
-  clone(): SharedPermissionsItem13Model {
-    return new SharedPermissionsItem13Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedPermissionsItem13(entity: ISharedPermissionsItem13): ISharedPermissionsItem13 {
+  return { ...entity };
 }

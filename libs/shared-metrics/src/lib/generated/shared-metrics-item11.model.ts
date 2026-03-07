@@ -68,43 +68,27 @@ export interface ISharedMetricsItem11Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedMetricsItem11Model implements ISharedMetricsItem11 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedMetricsItem11Status = undefined as any;
-  enabled: SharedMetricsItem11Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedMetricsItem11Status = undefined as any;
-  category: SharedMetricsItem11Type = undefined as any;
-  tags: string = undefined as any;
-  config: number = undefined as any;
-  options: boolean = undefined as any;
-  parentId: Date = undefined as any;
-  ownerId: SharedMetricsItem11Status = undefined as any;
-  status: SharedMetricsItem11Type = undefined as any;
-  id: string = undefined as any;
+export function createSharedMetricsItem11(data: Partial<ISharedMetricsItem11> = {}): ISharedMetricsItem11 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedMetricsItem11;
+}
 
-  constructor(data?: Partial<ISharedMetricsItem11>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedMetricsItem11(entity: ISharedMetricsItem11): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedMetricsItem11 {
-    return { ...this } as ISharedMetricsItem11;
-  }
-
-  clone(): SharedMetricsItem11Model {
-    return new SharedMetricsItem11Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedMetricsItem11(entity: ISharedMetricsItem11): ISharedMetricsItem11 {
+  return { ...entity };
 }

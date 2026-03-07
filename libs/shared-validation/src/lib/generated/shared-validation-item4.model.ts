@@ -61,36 +61,27 @@ export interface ISharedValidationItem4Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class SharedValidationItem4Model implements ISharedValidationItem4 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: SharedValidationItem4Status = undefined as any;
-  enabled: SharedValidationItem4Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
-  metadata: Date = undefined as any;
-  priority: SharedValidationItem4Status = undefined as any;
-  category: SharedValidationItem4Type = undefined as any;
+export function createSharedValidationItem4(data: Partial<ISharedValidationItem4> = {}): ISharedValidationItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as ISharedValidationItem4;
+}
 
-  constructor(data?: Partial<ISharedValidationItem4>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateSharedValidationItem4(entity: ISharedValidationItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): ISharedValidationItem4 {
-    return { ...this } as ISharedValidationItem4;
-  }
-
-  clone(): SharedValidationItem4Model {
-    return new SharedValidationItem4Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneSharedValidationItem4(entity: ISharedValidationItem4): ISharedValidationItem4 {
+  return { ...entity };
 }

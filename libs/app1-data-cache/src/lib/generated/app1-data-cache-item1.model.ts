@@ -58,33 +58,27 @@ export interface IApp1DataCacheItem1Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1DataCacheItem1Model implements IApp1DataCacheItem1 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1DataCacheItem1Status = undefined as any;
-  enabled: App1DataCacheItem1Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp1DataCacheItem1(data: Partial<IApp1DataCacheItem1> = {}): IApp1DataCacheItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1DataCacheItem1;
+}
 
-  constructor(data?: Partial<IApp1DataCacheItem1>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1DataCacheItem1(entity: IApp1DataCacheItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1DataCacheItem1 {
-    return { ...this } as IApp1DataCacheItem1;
-  }
-
-  clone(): App1DataCacheItem1Model {
-    return new App1DataCacheItem1Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1DataCacheItem1(entity: IApp1DataCacheItem1): IApp1DataCacheItem1 {
+  return { ...entity };
 }

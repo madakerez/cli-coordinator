@@ -58,33 +58,27 @@ export interface IApp1FeatureNotificationsItem13Filter {
   sortOrder?: 'asc' | 'desc';
 }
 
-export class App1FeatureNotificationsItem13Model implements IApp1FeatureNotificationsItem13 {
-  id: string = undefined as any;
-  name: number = undefined as any;
-  label: boolean = undefined as any;
-  value: Date = undefined as any;
-  count: App1FeatureNotificationsItem13Status = undefined as any;
-  enabled: App1FeatureNotificationsItem13Type = undefined as any;
-  createdAt: string = undefined as any;
-  updatedAt: number = undefined as any;
-  description: boolean = undefined as any;
+export function createApp1FeatureNotificationsItem13(data: Partial<IApp1FeatureNotificationsItem13> = {}): IApp1FeatureNotificationsItem13 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1FeatureNotificationsItem13;
+}
 
-  constructor(data?: Partial<IApp1FeatureNotificationsItem13>) {
-    if (data) Object.assign(this, data);
-  }
+export function validateApp1FeatureNotificationsItem13(entity: IApp1FeatureNotificationsItem13): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
 
-  toJSON(): IApp1FeatureNotificationsItem13 {
-    return { ...this } as IApp1FeatureNotificationsItem13;
-  }
-
-  clone(): App1FeatureNotificationsItem13Model {
-    return new App1FeatureNotificationsItem13Model(this.toJSON());
-  }
-
-  validate(): string[] {
-    const errors: string[] = [];
-    if (!this.id) errors.push('id is required');
-    if (!this.name) errors.push('name is required');
-    return errors;
-  }
+export function cloneApp1FeatureNotificationsItem13(entity: IApp1FeatureNotificationsItem13): IApp1FeatureNotificationsItem13 {
+  return { ...entity };
 }
