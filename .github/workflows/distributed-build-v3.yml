@@ -78,12 +78,6 @@ jobs:
           path: node_modules
           key: nm-${{ hashFiles('package-lock.json') }}
 
-      - uses: actions/cache@v4
-        with:
-          path: .nx/cache
-          key: nx-${{ github.sha }}-agent${{ matrix.agent }}
-          restore-keys: nx-
-
       - name: Build and deploy from task queue
         run: npx tsx scripts/agent-v3.ts
         env:
