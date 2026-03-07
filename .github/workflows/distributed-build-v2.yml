@@ -103,12 +103,12 @@ jobs:
             BAR=$(printf '█%.0s' $(seq 1 $BAR_FILLED 2>/dev/null) ; printf '░%.0s' $(seq 1 $BAR_EMPTY 2>/dev/null))
 
             echo "⏱️  ${ELAPSED}s | ${BAR} ${DONE}/${TOTAL} libs (${PCT}%) | 🔨 ${RUNNING} building | 📋 ${READY} queued"
-            echo "$STATUS" | jq -r '.appStatus[] | "   \(if .buildState == "done" then "✅" elif .buildState == "running" then "🔨" elif .libsDone then "🟢" else "⏳" end) \(.name): libs \(.libsReady)/\(.libsNeeded)\(if .buildState == "done" then " — BUILT" elif .buildState == "running" then " — BUILDING (\(.builtBy))" elif .libsDone then " — ready for build" else "" end)"'
+            echo "$STATUS" | jq -r '.appStatus[] | "   \(if .buildState == "done" then "✅" elif .buildState == "running" then "🔨" elif .libsDone then "🟢" else "⏳" end) \(.name): libs \(.libsReady)/\(.libsNeeded)\(if .buildState == "done" then " — BUILT + DEPLOYED" elif .buildState == "running" then " — BUILDING (\(.builtBy))" elif .libsDone then " — ready for build" else "" end)"'
 
             if [ "$ALL_DONE" = "true" ]; then
               echo ""
               echo "════════════════════════════════════════════"
-              echo "🏁 All libs + apps built in ${ELAPSED}s"
+              echo "🏁 All libs + apps built and deployed in ${ELAPSED}s"
               echo "════════════════════════════════════════════"
               echo ""
               curl -sf http://localhost:8765/timeline
@@ -118,7 +118,7 @@ jobs:
           done
         timeout-minutes: 30
 
-  # ─── Agents: build libs AND apps from task queue ───
+  # ─── Agents: build libs, build apps, deploy apps — all from task queue ───
   agents:
     name: "Agent ${{ matrix.agent }}"
     needs: [prepare]
@@ -160,122 +160,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Build tasks from queue
+      - name: Build and deploy from task queue
         run: npx tsx scripts/agent-v2.ts
         env:
           AGENT_ID: agent-${{ matrix.agent }}
           AGENT_CONCURRENCY: '2'
-
-      - name: Upload app build artifacts
-        if: always()
-        run: |
-          for app in app1 app2 app3 app4; do
-            if [ -d "dist/apps/${app}" ]; then
-              echo "📦 Uploading ${app} build artifact..."
-            fi
-          done
-
-      - name: Upload app1 artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-app1-agent-${{ matrix.agent }}
-          path: dist/apps/app1
-          if-no-files-found: ignore
-
-      - name: Upload app2 artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-app2-agent-${{ matrix.agent }}
-          path: dist/apps/app2
-          if-no-files-found: ignore
-
-      - name: Upload app3 artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-app3-agent-${{ matrix.agent }}
-          path: dist/apps/app3
-          if-no-files-found: ignore
-
-      - name: Upload app4 artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-app4-agent-${{ matrix.agent }}
-          path: dist/apps/app4
-          if-no-files-found: ignore
-
-  # ─── Deploys: start after all agents finish ───
-  deploy-app1:
-    name: "Deploy app1"
-    needs: [agents]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download app1 artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: build-app1-*
-          merge-multiple: true
-          path: dist/
-      - name: Deploy to production
-        run: |
-          echo "🚢 Deploying app1 to https://app1.example.com..."
-          ls -la dist/
-          sleep 2
-          echo "✅ app1 live!"
-
-  deploy-app2:
-    name: "Deploy app2"
-    needs: [agents]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download app2 artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: build-app2-*
-          merge-multiple: true
-          path: dist/
-      - name: Deploy to production
-        run: |
-          echo "🚢 Deploying app2 to https://app2.example.com..."
-          ls -la dist/
-          sleep 2
-          echo "✅ app2 live!"
-
-  deploy-app3:
-    name: "Deploy app3"
-    needs: [agents]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download app3 artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: build-app3-*
-          merge-multiple: true
-          path: dist/
-      - name: Deploy to production
-        run: |
-          echo "🚢 Deploying app3 to https://app3.example.com..."
-          ls -la dist/
-          sleep 2
-          echo "✅ app3 live!"
-
-  deploy-app4:
-    name: "Deploy app4"
-    needs: [agents]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download app4 artifact
-        uses: actions/download-artifact@v4
-        with:
-          pattern: build-app4-*
-          merge-multiple: true
-          path: dist/
-      - name: Deploy to production
-        run: |
-          echo "🚢 Deploying app4 to https://app4.example.com..."
-          ls -la dist/
-          sleep 2
-          echo "✅ app4 live!"

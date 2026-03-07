@@ -10,6 +10,7 @@ const POLL_INTERVAL = 2000;
 const agentStart = Date.now();
 let libsBuilt = 0;
 let appsBuilt = 0;
+let appsDeployed = 0;
 let libsFailed = 0;
 let appsFailed = 0;
 let totalBuildTime = 0;
@@ -61,13 +62,11 @@ async function reportDone(task: string, success: boolean): Promise<boolean> {
   }
 }
 
-function buildTask(taskName: string, taskType: string): Promise<{ success: boolean; duration: number }> {
+function runCommand(cmd: string): Promise<{ success: boolean; duration: number }> {
   return new Promise((resolve) => {
-    const icon = taskType === 'app' ? '🚀' : '🔨';
-    log(`${icon} Building ${taskName}...`);
     const start = Date.now();
     exec(
-      `npx nx run ${taskName}:build`,
+      cmd,
       {
         cwd: ROOT,
         env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true', NX_DAEMON: 'false' },
@@ -77,16 +76,42 @@ function buildTask(taskName: string, taskType: string): Promise<{ success: boole
       (error, stdout, stderr) => {
         const duration = Date.now() - start;
         if (error) {
-          log(`❌ ${taskName} FAILED after ${fmtDuration(duration)}`);
           if (stderr) console.error(stderr.slice(-500));
           resolve({ success: false, duration });
         } else {
-          log(`✅ ${taskName} built in ${fmtDuration(duration)}`);
           resolve({ success: true, duration });
         }
       }
     );
   });
+}
+
+async function buildTask(taskName: string, taskType: string): Promise<{ success: boolean; duration: number }> {
+  const icon = taskType === 'app' ? '🚀' : '🔨';
+  log(`${icon} Building ${taskName}...`);
+  const result = await runCommand(`npx nx run ${taskName}:build`);
+
+  if (!result.success) {
+    log(`❌ ${taskName} FAILED after ${fmtDuration(result.duration)}`);
+    return result;
+  }
+
+  log(`✅ ${taskName} built in ${fmtDuration(result.duration)}`);
+
+  // Deploy immediately after successful app build
+  if (taskType === 'app') {
+    log(`🚢 Deploying ${taskName}...`);
+    // TODO: replace with real deploy command
+    const deployResult = await runCommand(`echo "Deploying ${taskName} to https://${taskName}.example.com..." && ls dist/apps/${taskName}/ && echo "✅ ${taskName} deployed!"`);
+    if (deployResult.success) {
+      appsDeployed++;
+      log(`🚢 ${taskName} deployed in ${fmtDuration(deployResult.duration)}`);
+    } else {
+      log(`❌ ${taskName} deploy FAILED after ${fmtDuration(deployResult.duration)}`);
+    }
+  }
+
+  return result;
 }
 
 async function waitForCoordinator() {
@@ -116,6 +141,7 @@ function printSummary() {
   console.log(`│  Total time:  ${totalTime}`.padEnd(38) + '│');
   console.log(`│  Libs built:  ${libsBuilt}`.padEnd(38) + '│');
   console.log(`│  Apps built:  ${appsBuilt}`.padEnd(38) + '│');
+  console.log(`│  Deployed:    ${appsDeployed}`.padEnd(38) + '│');
   if (libsFailed > 0) {
     console.log(`│  Libs failed: ${libsFailed}`.padEnd(38) + '│');
   }
