@@ -188,20 +188,46 @@ function getNextTask(agentId: string): { task: string | null; type: string | nul
   }
   agents[agentId].lastSeen = Date.now();
 
-  // Priority 1: ready apps
+  // Priority 1: ready apps — assign to agent with most local cache hits
   const readyApps = apps.filter(a => tasks[a].state === 'ready');
   if (readyApps.length > 0) {
-    readyApps.sort((a, b) => (appDeps[a]?.length || 0) - (appDeps[b]?.length || 0));
-    const picked = tasks[readyApps[0]];
+    // Score each ready app by how many of its deps this agent built locally
+    const agentBuiltLibs = new Set(
+      Object.values(tasks).filter(t => t.type === 'lib' && t.state === 'done' && t.agentId === agentId).map(t => t.name)
+    );
+    const scored = readyApps.map(app => {
+      const myDeps = appDeps[app] || [];
+      const localHits = myDeps.filter(d => agentBuiltLibs.has(d)).length;
+      return { app, localHits, totalDeps: myDeps.length };
+    });
+    // Pick app where this agent has most local cache — ties broken by fewest total deps (fastest)
+    scored.sort((a, b) => b.localHits - a.localHits || a.totalDeps - b.totalDeps);
+    const best = scored[0];
+    const picked = tasks[best.app];
     picked.state = 'running';
     picked.agentId = agentId;
     picked.startTime = Date.now();
     agents[agentId].currentTask = picked.name;
 
     const doneApps = apps.filter(a => tasks[a].state === 'done').length;
-    console.log(`[${elapsed()}] 🚀 ${agentId} ← BUILD ${picked.name} (app ${doneApps + 1}/${apps.length})`);
-    broadcast('task-assigned', { task: picked.name, type: 'app', agentId });
-    return { task: picked.name, type: 'app', done: false };
+    const localPct = best.totalDeps > 0 ? Math.round(best.localHits / best.totalDeps * 100) : 100;
+
+    // If this agent has poor local cache and there are still libs to build, skip app — let a better agent pick it
+    const readyLibs = libs.filter(l => tasks[l].state === 'ready');
+    if (localPct < 30 && readyLibs.length > 0) {
+      console.log(`[${elapsed()}] ⏭️  ${agentId} skips ${picked.name} (only ${localPct}% local) — building libs instead`);
+      // Fall through to lib assignment below
+    } else {
+      picked.state = 'running';
+      picked.agentId = agentId;
+      picked.startTime = Date.now();
+      agents[agentId].currentTask = picked.name;
+
+      const doneApps = apps.filter(a => tasks[a].state === 'done').length;
+      console.log(`[${elapsed()}] 🚀 ${agentId} ← BUILD ${picked.name} (app ${doneApps + 1}/${apps.length}, ${best.localHits}/${best.totalDeps} deps local = ${localPct}%)`);
+      broadcast('task-assigned', { task: picked.name, type: 'app', agentId, localHits: best.localHits, totalDeps: best.totalDeps });
+      return { task: picked.name, type: 'app', done: false };
+    }
   }
 
   // Priority 2: ready libs
