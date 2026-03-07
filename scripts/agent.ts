@@ -67,7 +67,7 @@ function buildLib(taskName: string): Promise<{ success: boolean; duration: numbe
       `npx nx run ${taskName}:build`,
       {
         cwd: ROOT,
-        env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
+        env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true', NX_DAEMON: 'false' },
         timeout: 300_000,
         maxBuffer: 10 * 1024 * 1024,
       },

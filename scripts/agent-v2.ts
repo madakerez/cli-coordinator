@@ -70,7 +70,7 @@ function buildTask(taskName: string, taskType: string): Promise<{ success: boole
       `npx nx run ${taskName}:build`,
       {
         cwd: ROOT,
-        env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true' },
+        env: { ...process.env, NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true', NX_DAEMON: 'false' },
         timeout: 600_000,
         maxBuffer: 10 * 1024 * 1024,
       },
