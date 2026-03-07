@@ -1,0 +1,92 @@
+export enum SharedValidationItem2Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum SharedValidationItem2Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface SharedValidationItem2Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface SharedValidationItem2Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface ISharedValidationItem2 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: SharedValidationItem2Status;
+  enabled: SharedValidationItem2Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+}
+
+export interface ISharedValidationItem2ListResponse {
+  items: ISharedValidationItem2[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface ISharedValidationItem2Filter {
+  query?: string;
+  status?: SharedValidationItem2Status[];
+  type?: SharedValidationItem2Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof ISharedValidationItem2;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export class SharedValidationItem2Model implements ISharedValidationItem2 {
+  id: string = undefined as any;
+  name: number = undefined as any;
+  label: boolean = undefined as any;
+  value: Date = undefined as any;
+  count: SharedValidationItem2Status = undefined as any;
+  enabled: SharedValidationItem2Type = undefined as any;
+  createdAt: string = undefined as any;
+  updatedAt: number = undefined as any;
+  description: boolean = undefined as any;
+  metadata: Date = undefined as any;
+
+  constructor(data?: Partial<ISharedValidationItem2>) {
+    if (data) Object.assign(this, data);
+  }
+
+  toJSON(): ISharedValidationItem2 {
+    return { ...this } as ISharedValidationItem2;
+  }
+
+  clone(): SharedValidationItem2Model {
+    return new SharedValidationItem2Model(this.toJSON());
+  }
+
+  validate(): string[] {
+    const errors: string[] = [];
+    if (!this.id) errors.push('id is required');
+    if (!this.name) errors.push('name is required');
+    return errors;
+  }
+}

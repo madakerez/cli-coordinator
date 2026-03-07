@@ -1,0 +1,102 @@
+export enum App1FeatureBillingItem7Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App1FeatureBillingItem7Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App1FeatureBillingItem7Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App1FeatureBillingItem7Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp1FeatureBillingItem7 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App1FeatureBillingItem7Status;
+  enabled: App1FeatureBillingItem7Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+  priority?: App1FeatureBillingItem7Status;
+  category?: App1FeatureBillingItem7Type;
+  tags?: string;
+  config?: number;
+  options?: boolean;
+}
+
+export interface IApp1FeatureBillingItem7ListResponse {
+  items: IApp1FeatureBillingItem7[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp1FeatureBillingItem7Filter {
+  query?: string;
+  status?: App1FeatureBillingItem7Status[];
+  type?: App1FeatureBillingItem7Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp1FeatureBillingItem7;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export class App1FeatureBillingItem7Model implements IApp1FeatureBillingItem7 {
+  id: string = undefined as any;
+  name: number = undefined as any;
+  label: boolean = undefined as any;
+  value: Date = undefined as any;
+  count: App1FeatureBillingItem7Status = undefined as any;
+  enabled: App1FeatureBillingItem7Type = undefined as any;
+  createdAt: string = undefined as any;
+  updatedAt: number = undefined as any;
+  description: boolean = undefined as any;
+  metadata: Date = undefined as any;
+  priority: App1FeatureBillingItem7Status = undefined as any;
+  category: App1FeatureBillingItem7Type = undefined as any;
+  tags: string = undefined as any;
+  config: number = undefined as any;
+  options: boolean = undefined as any;
+
+  constructor(data?: Partial<IApp1FeatureBillingItem7>) {
+    if (data) Object.assign(this, data);
+  }
+
+  toJSON(): IApp1FeatureBillingItem7 {
+    return { ...this } as IApp1FeatureBillingItem7;
+  }
+
+  clone(): App1FeatureBillingItem7Model {
+    return new App1FeatureBillingItem7Model(this.toJSON());
+  }
+
+  validate(): string[] {
+    const errors: string[] = [];
+    if (!this.id) errors.push('id is required');
+    if (!this.name) errors.push('name is required');
+    return errors;
+  }
+}

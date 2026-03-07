@@ -1,0 +1,88 @@
+export enum App1FeatureCommentsItem0Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App1FeatureCommentsItem0Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App1FeatureCommentsItem0Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App1FeatureCommentsItem0Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp1FeatureCommentsItem0 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App1FeatureCommentsItem0Status;
+  enabled: App1FeatureCommentsItem0Type;
+  createdAt?: string;
+  updatedAt?: number;
+}
+
+export interface IApp1FeatureCommentsItem0ListResponse {
+  items: IApp1FeatureCommentsItem0[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp1FeatureCommentsItem0Filter {
+  query?: string;
+  status?: App1FeatureCommentsItem0Status[];
+  type?: App1FeatureCommentsItem0Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp1FeatureCommentsItem0;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export class App1FeatureCommentsItem0Model implements IApp1FeatureCommentsItem0 {
+  id: string = undefined as any;
+  name: number = undefined as any;
+  label: boolean = undefined as any;
+  value: Date = undefined as any;
+  count: App1FeatureCommentsItem0Status = undefined as any;
+  enabled: App1FeatureCommentsItem0Type = undefined as any;
+  createdAt: string = undefined as any;
+  updatedAt: number = undefined as any;
+
+  constructor(data?: Partial<IApp1FeatureCommentsItem0>) {
+    if (data) Object.assign(this, data);
+  }
+
+  toJSON(): IApp1FeatureCommentsItem0 {
+    return { ...this } as IApp1FeatureCommentsItem0;
+  }
+
+  clone(): App1FeatureCommentsItem0Model {
+    return new App1FeatureCommentsItem0Model(this.toJSON());
+  }
+
+  validate(): string[] {
+    const errors: string[] = [];
+    if (!this.id) errors.push('id is required');
+    if (!this.name) errors.push('name is required');
+    return errors;
+  }
+}

@@ -1,0 +1,108 @@
+export enum SharedUiItem10Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum SharedUiItem10Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface SharedUiItem10Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface SharedUiItem10Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface ISharedUiItem10 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: SharedUiItem10Status;
+  enabled: SharedUiItem10Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+  priority?: SharedUiItem10Status;
+  category?: SharedUiItem10Type;
+  tags?: string;
+  config?: number;
+  options?: boolean;
+  parentId?: Date;
+  ownerId?: SharedUiItem10Status;
+  status?: SharedUiItem10Type;
+}
+
+export interface ISharedUiItem10ListResponse {
+  items: ISharedUiItem10[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface ISharedUiItem10Filter {
+  query?: string;
+  status?: SharedUiItem10Status[];
+  type?: SharedUiItem10Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof ISharedUiItem10;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export class SharedUiItem10Model implements ISharedUiItem10 {
+  id: string = undefined as any;
+  name: number = undefined as any;
+  label: boolean = undefined as any;
+  value: Date = undefined as any;
+  count: SharedUiItem10Status = undefined as any;
+  enabled: SharedUiItem10Type = undefined as any;
+  createdAt: string = undefined as any;
+  updatedAt: number = undefined as any;
+  description: boolean = undefined as any;
+  metadata: Date = undefined as any;
+  priority: SharedUiItem10Status = undefined as any;
+  category: SharedUiItem10Type = undefined as any;
+  tags: string = undefined as any;
+  config: number = undefined as any;
+  options: boolean = undefined as any;
+  parentId: Date = undefined as any;
+  ownerId: SharedUiItem10Status = undefined as any;
+  status: SharedUiItem10Type = undefined as any;
+
+  constructor(data?: Partial<ISharedUiItem10>) {
+    if (data) Object.assign(this, data);
+  }
+
+  toJSON(): ISharedUiItem10 {
+    return { ...this } as ISharedUiItem10;
+  }
+
+  clone(): SharedUiItem10Model {
+    return new SharedUiItem10Model(this.toJSON());
+  }
+
+  validate(): string[] {
+    const errors: string[] = [];
+    if (!this.id) errors.push('id is required');
+    if (!this.name) errors.push('name is required');
+    return errors;
+  }
+}
