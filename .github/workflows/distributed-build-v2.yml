@@ -1,0 +1,281 @@
+name: Distributed Build v2
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  NGROK_AUTHTOKEN: ${{ secrets.NGROK_AUTHTOKEN }}
+  NX_IGNORE_UNSUPPORTED_TS_SETUP: 'true'
+  AWS_ACCESS_KEY_ID: ${{ secrets.MINIO_ACCESS_KEY }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.MINIO_SECRET_KEY }}
+  NX_KEY: ${{ secrets.NX_KEY }}
+
+jobs:
+  # ─── Prepare: install dependencies once, cache for all jobs ───
+  prepare:
+    name: "Prepare"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache@v4
+        id: nm-cache
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
+      - if: steps.nm-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+  # ─── Coordinator: distributes lib AND app tasks to agents ───
+  coordinator:
+    name: "Coordinator"
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Install ngrok
+        run: |
+          curl -sSL https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz \
+            | sudo tar xz -C /usr/local/bin
+          ngrok config add-authtoken "$NGROK_AUTHTOKEN"
+
+      - name: Start coordinator
+        run: npx tsx scripts/coordinator-v2.ts &
+
+      - name: Wait for coordinator health
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:8765/health && break || sleep 1
+          done
+
+      - name: Start ngrok tunnel
+        run: |
+          ngrok http 8765 --log=stdout &
+          sleep 5
+          for i in $(seq 1 10); do
+            URL=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url // empty')
+            if [ -n "$URL" ]; then break; fi
+            sleep 2
+          done
+          if [ -z "$URL" ]; then echo "ERROR: ngrok tunnel failed"; exit 1; fi
+          echo "🌐 Tunnel: $URL"
+          mkdir -p /tmp/tunnel
+          echo "$URL" > /tmp/tunnel/url.txt
+
+      - name: Upload tunnel URL
+        uses: actions/upload-artifact@v4
+        with:
+          name: tunnel-url-v2
+          path: /tmp/tunnel/url.txt
+
+      - name: Monitor build progress
+        run: |
+          echo ""
+          echo "📡 Monitoring distributed builds (libs + apps)..."
+          echo ""
+          START_TIME=$(date +%s)
+          while true; do
+            STATUS=$(curl -sf http://localhost:8765/status)
+            DONE=$(echo "$STATUS" | jq -r '.done')
+            TOTAL=$(echo "$STATUS" | jq -r '.total')
+            RUNNING=$(echo "$STATUS" | jq -r '.running')
+            READY=$(echo "$STATUS" | jq -r '.ready')
+            ELAPSED=$(( $(date +%s) - START_TIME ))
+            ALL_DONE=$(echo "$STATUS" | jq -r '.allDone')
+
+            PCT=$(( DONE * 100 / TOTAL ))
+            BAR_FILLED=$(( DONE * 20 / TOTAL ))
+            BAR_EMPTY=$(( 20 - BAR_FILLED ))
+            BAR=$(printf '█%.0s' $(seq 1 $BAR_FILLED 2>/dev/null) ; printf '░%.0s' $(seq 1 $BAR_EMPTY 2>/dev/null))
+
+            echo "⏱️  ${ELAPSED}s | ${BAR} ${DONE}/${TOTAL} libs (${PCT}%) | 🔨 ${RUNNING} building | 📋 ${READY} queued"
+            echo "$STATUS" | jq -r '.appStatus[] | "   \(if .buildState == "done" then "✅" elif .buildState == "running" then "🔨" elif .libsDone then "🟢" else "⏳" end) \(.name): libs \(.libsReady)/\(.libsNeeded)\(if .buildState == "done" then " — BUILT" elif .buildState == "running" then " — BUILDING (\(.builtBy))" elif .libsDone then " — ready for build" else "" end)"'
+
+            if [ "$ALL_DONE" = "true" ]; then
+              echo ""
+              echo "════════════════════════════════════════════"
+              echo "🏁 All libs + apps built in ${ELAPSED}s"
+              echo "════════════════════════════════════════════"
+              echo ""
+              curl -sf http://localhost:8765/timeline
+              break
+            fi
+            sleep 10
+          done
+        timeout-minutes: 30
+
+  # ─── Agents: build libs AND apps from task queue ───
+  agents:
+    name: "Agent ${{ matrix.agent }}"
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        agent: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/cache/restore@v4
+        with:
+          path: node_modules
+          key: nm-${{ hashFiles('package-lock.json') }}
+
+      - name: Connect to coordinator
+        run: |
+          echo "📡 Waiting for coordinator tunnel URL..."
+          for i in $(seq 1 60); do
+            ARTIFACT_ID=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
+              --jq '.artifacts[]? | select(.name=="tunnel-url-v2") | .id // empty' 2>/dev/null) || true
+            if [[ "$ARTIFACT_ID" =~ ^[0-9]+$ ]]; then
+              echo "✅ Found tunnel artifact"
+              mkdir -p /tmp/tunnel
+              gh api "repos/${{ github.repository }}/actions/artifacts/${ARTIFACT_ID}/zip" > /tmp/tunnel.zip
+              unzip -o /tmp/tunnel.zip -d /tmp/tunnel
+              break
+            fi
+            if (( i % 6 == 0 )); then echo "   ⏳ Still waiting... (${i}/60)"; fi
+            sleep 5
+          done
+          if [ ! -f /tmp/tunnel/url.txt ]; then echo "❌ No tunnel URL found"; exit 1; fi
+          URL=$(cat /tmp/tunnel/url.txt)
+          echo "COORDINATOR_URL=$URL" >> $GITHUB_ENV
+          echo "🌐 Coordinator: $URL"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Build tasks from queue
+        run: npx tsx scripts/agent-v2.ts
+        env:
+          AGENT_ID: agent-${{ matrix.agent }}
+          AGENT_CONCURRENCY: '2'
+
+      - name: Upload app build artifacts
+        if: always()
+        run: |
+          for app in app1 app2 app3 app4; do
+            if [ -d "dist/apps/${app}" ]; then
+              echo "📦 Uploading ${app} build artifact..."
+            fi
+          done
+
+      - name: Upload app1 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app1-agent-${{ matrix.agent }}
+          path: dist/apps/app1
+          if-no-files-found: ignore
+
+      - name: Upload app2 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app2-agent-${{ matrix.agent }}
+          path: dist/apps/app2
+          if-no-files-found: ignore
+
+      - name: Upload app3 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app3-agent-${{ matrix.agent }}
+          path: dist/apps/app3
+          if-no-files-found: ignore
+
+      - name: Upload app4 artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app4-agent-${{ matrix.agent }}
+          path: dist/apps/app4
+          if-no-files-found: ignore
+
+  # ─── Deploys: start after all agents finish ───
+  deploy-app1:
+    name: "Deploy app1"
+    needs: [agents]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download app1 artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-app1-*
+          merge-multiple: true
+          path: dist/
+      - name: Deploy to production
+        run: |
+          echo "🚢 Deploying app1 to https://app1.example.com..."
+          ls -la dist/
+          sleep 2
+          echo "✅ app1 live!"
+
+  deploy-app2:
+    name: "Deploy app2"
+    needs: [agents]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download app2 artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-app2-*
+          merge-multiple: true
+          path: dist/
+      - name: Deploy to production
+        run: |
+          echo "🚢 Deploying app2 to https://app2.example.com..."
+          ls -la dist/
+          sleep 2
+          echo "✅ app2 live!"
+
+  deploy-app3:
+    name: "Deploy app3"
+    needs: [agents]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download app3 artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-app3-*
+          merge-multiple: true
+          path: dist/
+      - name: Deploy to production
+        run: |
+          echo "🚢 Deploying app3 to https://app3.example.com..."
+          ls -la dist/
+          sleep 2
+          echo "✅ app3 live!"
+
+  deploy-app4:
+    name: "Deploy app4"
+    needs: [agents]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download app4 artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: build-app4-*
+          merge-multiple: true
+          path: dist/
+      - name: Deploy to production
+        run: |
+          echo "🚢 Deploying app4 to https://app4.example.com..."
+          ls -la dist/
+          sleep 2
+          echo "✅ app4 live!"
