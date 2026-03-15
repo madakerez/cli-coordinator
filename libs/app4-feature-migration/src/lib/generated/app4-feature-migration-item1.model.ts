@@ -1,0 +1,84 @@
+export enum App4FeatureMigrationItem1Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App4FeatureMigrationItem1Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App4FeatureMigrationItem1Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App4FeatureMigrationItem1Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp4FeatureMigrationItem1 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App4FeatureMigrationItem1Status;
+  enabled: App4FeatureMigrationItem1Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+}
+
+export interface IApp4FeatureMigrationItem1ListResponse {
+  items: IApp4FeatureMigrationItem1[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp4FeatureMigrationItem1Filter {
+  query?: string;
+  status?: App4FeatureMigrationItem1Status[];
+  type?: App4FeatureMigrationItem1Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp4FeatureMigrationItem1;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export function createApp4FeatureMigrationItem1(data: Partial<IApp4FeatureMigrationItem1> = {}): IApp4FeatureMigrationItem1 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4FeatureMigrationItem1;
+}
+
+export function validateApp4FeatureMigrationItem1(entity: IApp4FeatureMigrationItem1): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
+
+export function cloneApp4FeatureMigrationItem1(entity: IApp4FeatureMigrationItem1): IApp4FeatureMigrationItem1 {
+  return { ...entity };
+}

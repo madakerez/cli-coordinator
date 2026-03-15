@@ -73,7 +73,26 @@ pre{white-space:pre-wrap;word-break:break-all}
       </div>
     </div>
 
-    <!-- App status -->
+    <!-- Workspace stats -->
+    <div id="workspace-stats" class="grid grid-cols-3 gap-4 mb-6 hidden">
+      <div class="bg-surface border border-border rounded-lg p-4">
+        <div class="text-muted text-xs mb-1">TS FILES</div>
+        <div class="text-2xl font-bold" id="ws-ts-files">—</div>
+        <div class="text-xs text-muted mt-1" id="ws-lines">—</div>
+      </div>
+      <div class="bg-surface border border-border rounded-lg p-4">
+        <div class="text-muted text-xs mb-1">WORKSPACE SIZE</div>
+        <div class="text-2xl font-bold" id="ws-disk-size">—</div>
+        <div class="text-xs text-muted mt-1" id="ws-projects">—</div>
+      </div>
+      <div class="bg-surface border border-border rounded-lg p-4">
+        <div class="text-muted text-xs mb-1">DEPENDENCY GRAPH</div>
+        <div class="text-2xl font-bold" id="ws-total-deps">—</div>
+        <div class="text-xs text-muted mt-1">total lib dependencies</div>
+      </div>
+    </div>
+
+    <!-- App status with file counts -->
     <div class="bg-surface border border-border rounded-lg p-4">
       <div class="text-sm font-bold text-accent mb-3">App Readiness</div>
       <div id="app-status" class="space-y-2"></div>
@@ -246,18 +265,34 @@ function updateUI() {
   document.getElementById('agent-count').textContent = agents.length;
   document.getElementById('building-count').textContent = `${s.running || 0} building`;
 
+  // Workspace stats
+  const ws = s.workspaceStats;
+  if (ws) {
+    document.getElementById('workspace-stats').classList.remove('hidden');
+    document.getElementById('ws-ts-files').textContent = ws.tsFiles?.toLocaleString() || '—';
+    document.getElementById('ws-lines').textContent = ws.totalLines ? `${(ws.totalLines/1000).toFixed(0)}K lines of code` : '—';
+    document.getElementById('ws-disk-size').textContent = ws.diskSize ? fmtBytes(ws.diskSize) : '—';
+    document.getElementById('ws-projects').textContent = `${s.total} libs + ${s.appStatus?.length||0} apps = ${s.totalTasks} projects`;
+    const totalDeps = (s.appStatus||[]).reduce((sum,a) => sum + a.libsNeeded, 0);
+    document.getElementById('ws-total-deps').textContent = totalDeps;
+  }
+
   // App status
   const appEl = document.getElementById('app-status');
   appEl.innerHTML = (s.appStatus || []).map(a => {
     const pct = a.libsNeeded ? Math.round(a.libsReady/a.libsNeeded*100) : 0;
+    const appFiles = ws?.perProject?.[a.name]?.files;
+    const libFiles = (s.appStatus||[]).length > 0 && ws?.perProject ? a.libsNeeded : 0;
+    const totalAppFiles = appFiles ? appFiles.toLocaleString() + ' files' : '';
     const statusIcon = a.buildState === 'done' ? '✅' : a.buildState === 'running' ? '🔨' : a.libsDone ? '🟢' : '⏳';
     const statusText = a.buildState === 'done' ? `Built${a.buildTime ? ' in '+fmtMs(a.buildTime) : ''}` : a.buildState === 'running' ? `Building (${a.builtBy})` : a.libsDone ? 'Ready' : `${a.libsReady}/${a.libsNeeded} libs`;
     const readyText = a.readyAt ? ` · libs at ${fmtMs(a.readyAt)}` : '';
     return `<div class="flex items-center gap-3">
       <span class="w-5 text-center">${statusIcon}</span>
       <span class="w-16 font-bold">${a.name}</span>
+      ${totalAppFiles ? '<span class="text-xs text-muted w-20">' + totalAppFiles + '</span>' : ''}
       <div class="flex-1 bg-bg rounded-full h-2"><div class="rounded-full h-2 transition-all ${a.buildState==='done'?'bg-green':a.libsDone?'bg-accent':'bg-yellow'}" style="width:${pct}%"></div></div>
-      <span class="text-xs text-muted w-48 text-right">${statusText}${readyText}</span>
+      <span class="text-xs text-muted w-56 text-right">${statusText}${readyText}</span>
     </div>`;
   }).join('');
 
@@ -460,6 +495,15 @@ function fmtMs(ms) {
 }
 
 function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtBytes(bytes) {
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0;
+  let size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return size.toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+}
 
 function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));

@@ -1,0 +1,83 @@
+export enum App4UiTablesItem12Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App4UiTablesItem12Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App4UiTablesItem12Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App4UiTablesItem12Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp4UiTablesItem12 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App4UiTablesItem12Status;
+  enabled: App4UiTablesItem12Type;
+  createdAt?: string;
+  updatedAt?: number;
+}
+
+export interface IApp4UiTablesItem12ListResponse {
+  items: IApp4UiTablesItem12[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp4UiTablesItem12Filter {
+  query?: string;
+  status?: App4UiTablesItem12Status[];
+  type?: App4UiTablesItem12Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp4UiTablesItem12;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export function createApp4UiTablesItem12(data: Partial<IApp4UiTablesItem12> = {}): IApp4UiTablesItem12 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp4UiTablesItem12;
+}
+
+export function validateApp4UiTablesItem12(entity: IApp4UiTablesItem12): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
+
+export function cloneApp4UiTablesItem12(entity: IApp4UiTablesItem12): IApp4UiTablesItem12 {
+  return { ...entity };
+}

@@ -1,0 +1,85 @@
+export enum App1DataSyncItem2Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App1DataSyncItem2Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App1DataSyncItem2Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App1DataSyncItem2Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp1DataSyncItem2 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App1DataSyncItem2Status;
+  enabled: App1DataSyncItem2Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+}
+
+export interface IApp1DataSyncItem2ListResponse {
+  items: IApp1DataSyncItem2[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp1DataSyncItem2Filter {
+  query?: string;
+  status?: App1DataSyncItem2Status[];
+  type?: App1DataSyncItem2Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp1DataSyncItem2;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export function createApp1DataSyncItem2(data: Partial<IApp1DataSyncItem2> = {}): IApp1DataSyncItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp1DataSyncItem2;
+}
+
+export function validateApp1DataSyncItem2(entity: IApp1DataSyncItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
+
+export function cloneApp1DataSyncItem2(entity: IApp1DataSyncItem2): IApp1DataSyncItem2 {
+  return { ...entity };
+}

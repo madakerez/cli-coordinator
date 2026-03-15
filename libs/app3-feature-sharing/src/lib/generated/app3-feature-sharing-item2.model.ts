@@ -1,0 +1,85 @@
+export enum App3FeatureSharingItem2Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App3FeatureSharingItem2Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App3FeatureSharingItem2Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App3FeatureSharingItem2Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp3FeatureSharingItem2 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App3FeatureSharingItem2Status;
+  enabled: App3FeatureSharingItem2Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+}
+
+export interface IApp3FeatureSharingItem2ListResponse {
+  items: IApp3FeatureSharingItem2[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp3FeatureSharingItem2Filter {
+  query?: string;
+  status?: App3FeatureSharingItem2Status[];
+  type?: App3FeatureSharingItem2Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp3FeatureSharingItem2;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export function createApp3FeatureSharingItem2(data: Partial<IApp3FeatureSharingItem2> = {}): IApp3FeatureSharingItem2 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeatureSharingItem2;
+}
+
+export function validateApp3FeatureSharingItem2(entity: IApp3FeatureSharingItem2): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
+
+export function cloneApp3FeatureSharingItem2(entity: IApp3FeatureSharingItem2): IApp3FeatureSharingItem2 {
+  return { ...entity };
+}

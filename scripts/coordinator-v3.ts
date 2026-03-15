@@ -65,6 +65,12 @@ interface Run {
   agents: Record<string, AgentInfo>;
   appReadyTimes: Record<string, number>;
   appBuildTimes: Record<string, number>;
+  workspaceStats?: {
+    tsFiles: number;
+    totalLines: number;
+    diskSize: number;
+    perProject: Record<string, { files: number }>;
+  };
 }
 
 // --- State ---
@@ -365,6 +371,7 @@ function getStatus() {
       ...a,
       avgBuildTime: a.tasksCompleted > 0 ? a.totalBuildTime / a.tasksCompleted : 0,
     })),
+    workspaceStats: currentRun.workspaceStats || null,
   };
 }
 
@@ -408,7 +415,7 @@ const server = http.createServer((req, res) => {
     req.on('end', () => {
       try {
         const data = JSON.parse(body);
-        const { graph, commitSha, branch, triggeredBy } = data;
+        const { graph, commitSha, branch, triggeredBy, workspaceStats } = data;
 
         // Parse graph
         const libs: string[] = [];
@@ -453,6 +460,7 @@ const server = http.createServer((req, res) => {
           triggeredBy: triggeredBy || 'unknown',
           libs, apps, deps, appDeps, sortedApps, tasks, timeline: [],
           agents: {}, appReadyTimes: {}, appBuildTimes: {},
+          workspaceStats: workspaceStats || undefined,
         };
 
         promoteReadyTasks();

@@ -43,12 +43,26 @@ jobs:
           echo ""
           echo "📡 Initializing coordinator at ${COORDINATOR_URL}..."
           node -e "
+            const { execSync } = require('child_process');
             const g = require('./graph.json').graph;
+            const tsFiles = parseInt(execSync('find libs apps -name \"*.ts\" -not -path \"*/node_modules/*\" | wc -l').toString().trim());
+            const totalLines = parseInt(execSync('find libs apps -name \"*.ts\" -not -path \"*/node_modules/*\" -exec cat {} + | wc -l').toString().trim());
+            const diskSize = execSync('du -sb libs/ apps/').toString().trim().split('\n').reduce((s,l) => s + parseInt(l), 0);
+            const perLib = {};
+            for (const [name, node] of Object.entries(g.nodes)) {
+              if (!node.data || !node.data.targets || !node.data.targets.build) continue;
+              const root = node.data.root || '';
+              try {
+                const files = parseInt(execSync('find ' + root + ' -name \"*.ts\" -not -path \"*/node_modules/*\" | wc -l').toString().trim());
+                perLib[name] = { files };
+              } catch {}
+            }
             const payload = JSON.stringify({
               graph: g,
               commitSha: '${{ github.sha }}',
               branch: '${{ github.ref_name }}',
-              triggeredBy: '${{ github.actor }}'
+              triggeredBy: '${{ github.actor }}',
+              workspaceStats: { tsFiles, totalLines, diskSize, perProject: perLib }
             });
             require('fs').writeFileSync('/tmp/init-payload.json', payload);
           "

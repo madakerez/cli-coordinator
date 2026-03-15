@@ -1,0 +1,87 @@
+export enum App3FeaturePreviewItem4Status {
+  Active = 'active',
+  Inactive = 'inactive',
+  Pending = 'pending',
+  Archived = 'archived',
+  Draft = 'draft',
+}
+
+export enum App3FeaturePreviewItem4Type {
+  Default = 'default',
+  Custom = 'custom',
+  System = 'system',
+  Template = 'template',
+}
+
+export interface App3FeaturePreviewItem4Config {
+  maxRetries: number;
+  timeout: number;
+  batchSize: number;
+  enableCache: boolean;
+  logLevel: 'debug' | 'info' | 'warn' | 'error';
+}
+
+export interface App3FeaturePreviewItem4Metadata {
+  version: number;
+  lastModified: Date;
+  author: string;
+  checksum: string;
+}
+
+export interface IApp3FeaturePreviewItem4 {
+  id: string;
+  name: number;
+  label: boolean;
+  value: Date;
+  count: App3FeaturePreviewItem4Status;
+  enabled: App3FeaturePreviewItem4Type;
+  createdAt?: string;
+  updatedAt?: number;
+  description?: boolean;
+  metadata?: Date;
+  priority?: App3FeaturePreviewItem4Status;
+  category?: App3FeaturePreviewItem4Type;
+}
+
+export interface IApp3FeaturePreviewItem4ListResponse {
+  items: IApp3FeaturePreviewItem4[];
+  total: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface IApp3FeaturePreviewItem4Filter {
+  query?: string;
+  status?: App3FeaturePreviewItem4Status[];
+  type?: App3FeaturePreviewItem4Type;
+  dateFrom?: Date;
+  dateTo?: Date;
+  sortBy?: keyof IApp3FeaturePreviewItem4;
+  sortOrder?: 'asc' | 'desc';
+}
+
+export function createApp3FeaturePreviewItem4(data: Partial<IApp3FeaturePreviewItem4> = {}): IApp3FeaturePreviewItem4 {
+  return {
+    id: '',
+    name: '',
+    label: '',
+    value: 0,
+    count: 0,
+    enabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...data,
+  } as IApp3FeaturePreviewItem4;
+}
+
+export function validateApp3FeaturePreviewItem4(entity: IApp3FeaturePreviewItem4): string[] {
+  const errors: string[] = [];
+  if (!entity.id) errors.push('id is required');
+  if (!entity.name) errors.push('name is required');
+  return errors;
+}
+
+export function cloneApp3FeaturePreviewItem4(entity: IApp3FeaturePreviewItem4): IApp3FeaturePreviewItem4 {
+  return { ...entity };
+}
