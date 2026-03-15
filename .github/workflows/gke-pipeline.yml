@@ -1,0 +1,194 @@
+name: GKE CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # manual trigger for testing
+
+env:
+  PROJECT_ID: project-c09883fa-34b7-476f-80e
+  REGION: us-central1
+  CLUSTER: lab-cluster
+  ZONE: us-central1-a
+  IMAGE: us-central1-docker.pkg.dev/project-c09883fa-34b7-476f-80e/ci-images/cli-coordinator-base
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  # ──────────────────────────────────────
+  # Job 1: Lint (light pool)
+  # ──────────────────────────────────────
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Run lint on GKE (light pool)
+        run: |
+          cat <<'MANIFEST' | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: lint-${{ github.run_id }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            backoffLimit: 0
+            template:
+              spec:
+                nodeSelector:
+                  workload: light
+                containers:
+                - name: lint
+                  image: ${{ env.IMAGE }}:latest
+                  command: ["sh", "-c", "npx nx run-many --target=lint --projects=app1 --parallel=2"]
+                  resources:
+                    requests:
+                      cpu: "250m"
+                      memory: "512Mi"
+                restartPolicy: Never
+          MANIFEST
+
+          echo "Waiting for lint job..."
+          kubectl wait --for=condition=complete job/lint-${{ github.run_id }} --timeout=300s
+
+          echo "--- LINT LOGS ---"
+          kubectl logs job/lint-${{ github.run_id }}
+
+  # ──────────────────────────────────────
+  # Job 2: Unit tests (light pool)
+  # ──────────────────────────────────────
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Run tests on GKE (light pool)
+        run: |
+          cat <<'MANIFEST' | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: test-${{ github.run_id }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            backoffLimit: 0
+            template:
+              spec:
+                nodeSelector:
+                  workload: light
+                containers:
+                - name: test
+                  image: ${{ env.IMAGE }}:latest
+                  command: ["sh", "-c", "npx nx run-many --target=test --projects=app1 --parallel=2"]
+                  resources:
+                    requests:
+                      cpu: "250m"
+                      memory: "512Mi"
+                restartPolicy: Never
+          MANIFEST
+
+          echo "Waiting for test job..."
+          kubectl wait --for=condition=complete job/test-${{ github.run_id }} --timeout=300s
+
+          echo "--- TEST LOGS ---"
+          kubectl logs job/test-${{ github.run_id }}
+
+  # ──────────────────────────────────────
+  # Job 3: Build all apps (heavy pool)
+  # ──────────────────────────────────────
+  build:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Build apps on GKE (heavy pool)
+        run: |
+          cat <<'MANIFEST' | kubectl apply -f -
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: build-${{ github.run_id }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            backoffLimit: 0
+            template:
+              spec:
+                nodeSelector:
+                  workload: heavy
+                containers:
+                - name: build
+                  image: ${{ env.IMAGE }}:latest
+                  command: ["sh", "-c", "npx nx run-many --target=build --all --parallel=4"]
+                  resources:
+                    requests:
+                      cpu: "2000m"
+                      memory: "4Gi"
+                restartPolicy: Never
+          MANIFEST
+
+          echo "Waiting for build job..."
+          kubectl wait --for=condition=complete job/build-${{ github.run_id }} --timeout=600s
+
+          echo "--- BUILD LOGS ---"
+          kubectl logs job/build-${{ github.run_id }}
+
+  # ──────────────────────────────────────
+  # Job 4: Rebuild base image (only on package.json change)
+  # ──────────────────────────────────────
+  rebuild-base-image:
+    if: contains(github.event.head_commit.modified, 'package-lock.json')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+      - run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and push new base image
+        run: |
+          docker build -f Dockerfile.ci-base \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest .
+          docker push --all-tags ${{ env.IMAGE }}
