@@ -13,12 +13,44 @@ env:
   IMAGE: us-central1-docker.pkg.dev/project-c09883fa-34b7-476f-80e/ci-images/cli-coordinator-base
   WIF_PROVIDER: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
   WIF_SA: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+  GIT_SYNC: "git fetch --depth=1 origin ${{ github.sha }} && git reset --hard ${{ github.sha }}"
 
 permissions:
   contents: read
   id-token: write
 
 jobs:
+  # ──────────────────────────────────────
+  # Setup: Ensure NX cache PVC exists
+  # ──────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Create NX cache PVC
+        run: |
+          kubectl apply -f - <<'EOF'
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: nx-cache
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 5Gi
+          EOF
+
   # ──────────────────────────────────────
   # Job 1: Lint (light pool)
   # ──────────────────────────────────────
@@ -55,7 +87,7 @@ jobs:
                 containers:
                 - name: lint
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "git fetch --depth=1 origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && npx nx run-many --target=lint --projects=app1 --parallel=2 --verbose"]
+                  command: ["sh", "-c", "${{ env.GIT_SYNC }} && npx nx run-many --target=lint --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
@@ -115,7 +147,7 @@ jobs:
                 containers:
                 - name: test
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "git fetch --depth=1 origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && npx nx run-many --target=test --projects=app1 --parallel=2 --verbose"]
+                  command: ["sh", "-c", "${{ env.GIT_SYNC }} && npx nx run-many --target=test --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
@@ -140,10 +172,160 @@ jobs:
           }
 
   # ──────────────────────────────────────
-  # Job 3: Build & push production image
+  # Job 3: Build all libs (heavy pool, max parallel)
   # ──────────────────────────────────────
-  build:
-    needs: [lint, test]
+  build-libs:
+    needs: [setup, lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Submit libs build to GKE (heavy pool)
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: build-libs-${{ github.run_id }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            backoffLimit: 0
+            template:
+              spec:
+                nodeSelector:
+                  workload: heavy
+                containers:
+                - name: build
+                  image: ${{ env.IMAGE }}:latest
+                  command:
+                  - sh
+                  - -c
+                  - |
+                    ${{ env.GIT_SYNC }}
+                    echo "--- Building all libs (parallel=4, using all 4 CPUs) ---"
+                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=4 --verbose
+                    echo "--- Libs build complete ---"
+                  resources:
+                    requests:
+                      cpu: "3000m"
+                      memory: "8Gi"
+                  volumeMounts:
+                  - name: nx-cache
+                    mountPath: /app/.nx
+                volumes:
+                - name: nx-cache
+                  persistentVolumeClaim:
+                    claimName: nx-cache
+                restartPolicy: Never
+          EOF
+
+      - name: Stream logs
+        run: |
+          echo "Waiting for pod to start..."
+          kubectl wait --for=condition=ready pod -l job-name=build-libs-${{ github.run_id }} --timeout=300s
+          echo "--- LIBS BUILD LOGS ---"
+          kubectl logs -f job/build-libs-${{ github.run_id }}
+
+      - name: Verify job succeeded
+        if: always()
+        run: |
+          kubectl wait --for=condition=complete job/build-libs-${{ github.run_id }} --timeout=600s && echo "Libs build passed" || {
+            echo "--- LIBS BUILD FAILED ---"
+            kubectl logs job/build-libs-${{ github.run_id }} || true
+            exit 1
+          }
+
+  # ──────────────────────────────────────
+  # Job 4: Build all apps (heavy pool, after libs)
+  # ──────────────────────────────────────
+  build-apps:
+    needs: [build-libs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Submit apps build to GKE (heavy pool)
+        run: |
+          kubectl apply -f - <<EOF
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: build-apps-${{ github.run_id }}
+          spec:
+            ttlSecondsAfterFinished: 300
+            backoffLimit: 0
+            template:
+              spec:
+                nodeSelector:
+                  workload: heavy
+                containers:
+                - name: build
+                  image: ${{ env.IMAGE }}:latest
+                  command:
+                  - sh
+                  - -c
+                  - |
+                    ${{ env.GIT_SYNC }}
+                    echo "--- Building all apps (parallel=4, libs from NX cache) ---"
+                    npx nx run-many --target=build --projects='tag:type:app' --parallel=4 --verbose
+                    echo "--- Apps build complete ---"
+                  resources:
+                    requests:
+                      cpu: "3000m"
+                      memory: "8Gi"
+                  volumeMounts:
+                  - name: nx-cache
+                    mountPath: /app/.nx
+                  volumes:
+                  - name: nx-cache
+                    persistentVolumeClaim:
+                      claimName: nx-cache
+                restartPolicy: Never
+          EOF
+
+      - name: Stream logs
+        run: |
+          echo "Waiting for pod to start..."
+          kubectl wait --for=condition=ready pod -l job-name=build-apps-${{ github.run_id }} --timeout=300s
+          echo "--- APPS BUILD LOGS ---"
+          kubectl logs -f job/build-apps-${{ github.run_id }}
+
+      - name: Verify job succeeded
+        if: always()
+        run: |
+          kubectl wait --for=condition=complete job/build-apps-${{ github.run_id }} --timeout=600s && echo "Apps build passed" || {
+            echo "--- APPS BUILD FAILED ---"
+            kubectl logs job/build-apps-${{ github.run_id }} || true
+            exit 1
+          }
+
+  # ──────────────────────────────────────
+  # Job 5: Push production image
+  # ──────────────────────────────────────
+  push-image:
+    needs: [build-apps]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -172,7 +354,7 @@ jobs:
           echo "Pushed: $PROD_IMAGE:${{ github.sha }}"
 
   # ──────────────────────────────────────
-  # Job 4: Rebuild base image (on deps change)
+  # Job 6: Rebuild base image (on deps change)
   # ──────────────────────────────────────
   rebuild-base-image:
     if: contains(github.event.head_commit.modified, 'package-lock.json')
