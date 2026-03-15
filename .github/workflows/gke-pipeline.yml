@@ -213,13 +213,13 @@ jobs:
                   - -c
                   - |
                     ${{ env.GIT_SYNC }}
-                    echo "--- Building all libs (parallel=8, heavy 4 CPU) ---"
-                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=8 --verbose
+                    echo "--- Building all libs (parallel=10, heavy 6 CPU) ---"
+                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=10 --verbose
                     echo "--- Libs build complete ---"
                   resources:
                     requests:
-                      cpu: "3000m"
-                      memory: "8Gi"
+                      cpu: "5000m"
+                      memory: "12Gi"
                   volumeMounts:
                   - name: nx-cache
                     mountPath: /app/.nx
@@ -288,13 +288,13 @@ jobs:
                   - -c
                   - |
                     ${{ env.GIT_SYNC }}
-                    echo "--- Building all apps (parallel=4, libs from NX cache) ---"
-                    npx nx run-many --target=build --projects='tag:type:app' --parallel=4 --verbose
+                    echo "--- Building all apps (parallel=6, libs from NX cache) ---"
+                    npx nx run-many --target=build --projects='tag:type:app' --parallel=6 --verbose
                     echo "--- Apps build complete ---"
                   resources:
                     requests:
-                      cpu: "3000m"
-                      memory: "8Gi"
+                      cpu: "5000m"
+                      memory: "12Gi"
                   volumeMounts:
                   - name: nx-cache
                     mountPath: /app/.nx
