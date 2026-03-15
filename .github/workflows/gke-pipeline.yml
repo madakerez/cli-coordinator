@@ -298,10 +298,10 @@ jobs:
                   volumeMounts:
                   - name: nx-cache
                     mountPath: /app/.nx
-                  volumes:
-                  - name: nx-cache
-                    persistentVolumeClaim:
-                      claimName: nx-cache
+                volumes:
+                - name: nx-cache
+                  persistentVolumeClaim:
+                    claimName: nx-cache
                 restartPolicy: Never
           EOF
 
