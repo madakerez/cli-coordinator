@@ -3,7 +3,7 @@ name: GKE CI Pipeline
 on:
   push:
     branches: [main]
-  workflow_dispatch: # manual trigger for testing
+  workflow_dispatch:
 
 env:
   PROJECT_ID: project-c09883fa-34b7-476f-80e
@@ -11,6 +11,8 @@ env:
   CLUSTER: lab-cluster
   ZONE: us-central1-a
   IMAGE: us-central1-docker.pkg.dev/project-c09883fa-34b7-476f-80e/ci-images/cli-coordinator-base
+  WIF_PROVIDER: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+  WIF_SA: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
 
 permissions:
   contents: read
@@ -18,9 +20,41 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────
+  # Job 0: Ensure NX cache PVC exists
+  # ──────────────────────────────────────
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
+
+      - uses: google-github-actions/get-gke-credentials@v2
+        with:
+          cluster_name: lab-cluster
+          location: us-central1-a
+
+      - name: Create NX cache PVC if not exists
+        run: |
+          kubectl apply -f - <<'EOF'
+          apiVersion: v1
+          kind: PersistentVolumeClaim
+          metadata:
+            name: nx-cache
+          spec:
+            accessModes: [ReadWriteOnce]
+            resources:
+              requests:
+                storage: 5Gi
+          EOF
+
+  # ──────────────────────────────────────
   # Job 1: Lint (light pool)
   # ──────────────────────────────────────
   lint:
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -28,17 +62,17 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
 
       - uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: lab-cluster
           location: us-central1-a
 
-      - name: Run lint on GKE (light pool)
+      - name: Submit lint job to GKE
         run: |
-          cat <<'MANIFEST' | kubectl apply -f -
+          kubectl apply -f - <<EOF
           apiVersion: batch/v1
           kind: Job
           metadata:
@@ -53,24 +87,47 @@ jobs:
                 containers:
                 - name: lint
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "npx nx run-many --target=lint --projects=app1 --parallel=2"]
+                  command: ["sh", "-c", "npx nx run-many --target=lint --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
                       memory: "512Mi"
+                  volumeMounts:
+                  - name: nx-cache
+                    mountPath: /app/.nx
+                volumes:
+                - name: nx-cache
+                  persistentVolumeClaim:
+                    claimName: nx-cache
                 restartPolicy: Never
-          MANIFEST
+          EOF
 
-          echo "Waiting for lint job..."
-          kubectl wait --for=condition=complete job/lint-${{ github.run_id }} --timeout=600s
+      - name: Stream logs
+        run: |
+          echo "⏳ Waiting for pod to start..."
+          kubectl wait --for=condition=ready pod -l job-name=lint-${{ github.run_id }} --timeout=300s
 
-          echo "--- LINT LOGS ---"
-          kubectl logs job/lint-${{ github.run_id }}
+          echo "📋 Streaming lint logs:"
+          kubectl logs -f job/lint-${{ github.run_id }}
+
+      - name: Check job result
+        if: always()
+        run: |
+          STATUS=$(kubectl get job lint-${{ github.run_id }} -o jsonpath='{.status.conditions[0].type}')
+          echo "Job status: $STATUS"
+
+          if [ "$STATUS" != "Complete" ]; then
+            echo "❌ Lint job failed"
+            kubectl describe job lint-${{ github.run_id }}
+            kubectl logs job/lint-${{ github.run_id }} || true
+            exit 1
+          fi
 
   # ──────────────────────────────────────
   # Job 2: Unit tests (light pool)
   # ──────────────────────────────────────
   test:
+    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,17 +135,17 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
 
       - uses: google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: lab-cluster
           location: us-central1-a
 
-      - name: Run tests on GKE (light pool)
+      - name: Submit test job to GKE
         run: |
-          cat <<'MANIFEST' | kubectl apply -f -
+          kubectl apply -f - <<EOF
           apiVersion: batch/v1
           kind: Job
           metadata:
@@ -103,19 +160,41 @@ jobs:
                 containers:
                 - name: test
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "npx nx run-many --target=test --projects=app1 --parallel=2"]
+                  command: ["sh", "-c", "npx nx run-many --target=test --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
                       memory: "512Mi"
+                  volumeMounts:
+                  - name: nx-cache
+                    mountPath: /app/.nx
+                volumes:
+                - name: nx-cache
+                  persistentVolumeClaim:
+                    claimName: nx-cache
                 restartPolicy: Never
-          MANIFEST
+          EOF
 
-          echo "Waiting for test job..."
-          kubectl wait --for=condition=complete job/test-${{ github.run_id }} --timeout=600s
+      - name: Stream logs
+        run: |
+          echo "⏳ Waiting for pod to start..."
+          kubectl wait --for=condition=ready pod -l job-name=test-${{ github.run_id }} --timeout=300s
 
-          echo "--- TEST LOGS ---"
-          kubectl logs job/test-${{ github.run_id }}
+          echo "📋 Streaming test logs:"
+          kubectl logs -f job/test-${{ github.run_id }}
+
+      - name: Check job result
+        if: always()
+        run: |
+          STATUS=$(kubectl get job test-${{ github.run_id }} -o jsonpath='{.status.conditions[0].type}')
+          echo "Job status: $STATUS"
+
+          if [ "$STATUS" != "Complete" ]; then
+            echo "❌ Test job failed"
+            kubectl describe job test-${{ github.run_id }}
+            kubectl logs job/test-${{ github.run_id }} || true
+            exit 1
+          fi
 
   # ──────────────────────────────────────
   # Job 3: Build & push production image
@@ -129,8 +208,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
 
       - uses: google-github-actions/setup-gcloud@v2
       - run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
@@ -139,15 +218,18 @@ jobs:
         env:
           PROD_IMAGE: us-central1-docker.pkg.dev/project-c09883fa-34b7-476f-80e/ci-images/cli-coordinator-prod
         run: |
+          echo "🔨 Building production image..."
           docker build \
             -t $PROD_IMAGE:${{ github.sha }} \
             -t $PROD_IMAGE:latest .
+
+          echo "📦 Pushing to Artifact Registry..."
           docker push --all-tags $PROD_IMAGE
 
-          echo "Pushed: $PROD_IMAGE:${{ github.sha }}"
+          echo "✅ Pushed: $PROD_IMAGE:${{ github.sha }}"
 
   # ──────────────────────────────────────
-  # Job 4: Rebuild base image (only on package.json change)
+  # Job 4: Rebuild base image (on deps change)
   # ──────────────────────────────────────
   rebuild-base-image:
     if: contains(github.event.head_commit.modified, 'package-lock.json')
@@ -158,8 +240,8 @@ jobs:
       - id: auth
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: projects/475869006359/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: github-deployer@project-c09883fa-34b7-476f-80e.iam.gserviceaccount.com
+          workload_identity_provider: ${{ env.WIF_PROVIDER }}
+          service_account: ${{ env.WIF_SA }}
 
       - uses: google-github-actions/setup-gcloud@v2
       - run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
