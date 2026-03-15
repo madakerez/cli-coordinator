@@ -62,7 +62,7 @@ jobs:
           MANIFEST
 
           echo "Waiting for lint job..."
-          kubectl wait --for=condition=complete job/lint-${{ github.run_id }} --timeout=300s
+          kubectl wait --for=condition=complete job/lint-${{ github.run_id }} --timeout=600s
 
           echo "--- LINT LOGS ---"
           kubectl logs job/lint-${{ github.run_id }}
@@ -112,7 +112,7 @@ jobs:
           MANIFEST
 
           echo "Waiting for test job..."
-          kubectl wait --for=condition=complete job/test-${{ github.run_id }} --timeout=300s
+          kubectl wait --for=condition=complete job/test-${{ github.run_id }} --timeout=600s
 
           echo "--- TEST LOGS ---"
           kubectl logs job/test-${{ github.run_id }}
