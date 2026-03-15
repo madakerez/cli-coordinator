@@ -20,41 +20,9 @@ permissions:
 
 jobs:
   # ──────────────────────────────────────
-  # Job 0: Ensure NX cache PVC exists
-  # ──────────────────────────────────────
-  setup:
-    runs-on: ubuntu-latest
-    steps:
-      - id: auth
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ env.WIF_PROVIDER }}
-          service_account: ${{ env.WIF_SA }}
-
-      - uses: google-github-actions/get-gke-credentials@v2
-        with:
-          cluster_name: lab-cluster
-          location: us-central1-a
-
-      - name: Create NX cache PVC if not exists
-        run: |
-          kubectl apply -f - <<'EOF'
-          apiVersion: v1
-          kind: PersistentVolumeClaim
-          metadata:
-            name: nx-cache
-          spec:
-            accessModes: [ReadWriteOnce]
-            resources:
-              requests:
-                storage: 5Gi
-          EOF
-
-  # ──────────────────────────────────────
   # Job 1: Lint (light pool)
   # ──────────────────────────────────────
   lint:
-    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -92,42 +60,29 @@ jobs:
                     requests:
                       cpu: "250m"
                       memory: "512Mi"
-                  volumeMounts:
-                  - name: nx-cache
-                    mountPath: /app/.nx
-                volumes:
-                - name: nx-cache
-                  persistentVolumeClaim:
-                    claimName: nx-cache
                 restartPolicy: Never
           EOF
 
       - name: Stream logs
         run: |
-          echo "⏳ Waiting for pod to start..."
+          echo "Waiting for pod to start..."
           kubectl wait --for=condition=ready pod -l job-name=lint-${{ github.run_id }} --timeout=300s
-
-          echo "📋 Streaming lint logs:"
+          echo "--- LINT LOGS ---"
           kubectl logs -f job/lint-${{ github.run_id }}
 
-      - name: Check job result
+      - name: Verify job succeeded
         if: always()
         run: |
-          STATUS=$(kubectl get job lint-${{ github.run_id }} -o jsonpath='{.status.conditions[0].type}')
-          echo "Job status: $STATUS"
-
-          if [ "$STATUS" != "Complete" ]; then
-            echo "❌ Lint job failed"
-            kubectl describe job lint-${{ github.run_id }}
+          kubectl wait --for=condition=complete job/lint-${{ github.run_id }} --timeout=30s && echo "Lint passed" || {
+            echo "--- LINT FAILED ---"
             kubectl logs job/lint-${{ github.run_id }} || true
             exit 1
-          fi
+          }
 
   # ──────────────────────────────────────
   # Job 2: Unit tests (light pool)
   # ──────────────────────────────────────
   test:
-    needs: [setup]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -165,36 +120,24 @@ jobs:
                     requests:
                       cpu: "250m"
                       memory: "512Mi"
-                  volumeMounts:
-                  - name: nx-cache
-                    mountPath: /app/.nx
-                volumes:
-                - name: nx-cache
-                  persistentVolumeClaim:
-                    claimName: nx-cache
                 restartPolicy: Never
           EOF
 
       - name: Stream logs
         run: |
-          echo "⏳ Waiting for pod to start..."
+          echo "Waiting for pod to start..."
           kubectl wait --for=condition=ready pod -l job-name=test-${{ github.run_id }} --timeout=300s
-
-          echo "📋 Streaming test logs:"
+          echo "--- TEST LOGS ---"
           kubectl logs -f job/test-${{ github.run_id }}
 
-      - name: Check job result
+      - name: Verify job succeeded
         if: always()
         run: |
-          STATUS=$(kubectl get job test-${{ github.run_id }} -o jsonpath='{.status.conditions[0].type}')
-          echo "Job status: $STATUS"
-
-          if [ "$STATUS" != "Complete" ]; then
-            echo "❌ Test job failed"
-            kubectl describe job test-${{ github.run_id }}
+          kubectl wait --for=condition=complete job/test-${{ github.run_id }} --timeout=30s && echo "Tests passed" || {
+            echo "--- TESTS FAILED ---"
             kubectl logs job/test-${{ github.run_id }} || true
             exit 1
-          fi
+          }
 
   # ──────────────────────────────────────
   # Job 3: Build & push production image
@@ -218,15 +161,15 @@ jobs:
         env:
           PROD_IMAGE: us-central1-docker.pkg.dev/project-c09883fa-34b7-476f-80e/ci-images/cli-coordinator-prod
         run: |
-          echo "🔨 Building production image..."
+          echo "Building production image..."
           docker build \
             -t $PROD_IMAGE:${{ github.sha }} \
             -t $PROD_IMAGE:latest .
 
-          echo "📦 Pushing to Artifact Registry..."
+          echo "Pushing to Artifact Registry..."
           docker push --all-tags $PROD_IMAGE
 
-          echo "✅ Pushed: $PROD_IMAGE:${{ github.sha }}"
+          echo "Pushed: $PROD_IMAGE:${{ github.sha }}"
 
   # ──────────────────────────────────────
   # Job 4: Rebuild base image (on deps change)
