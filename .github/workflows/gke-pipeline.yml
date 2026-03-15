@@ -191,7 +191,7 @@ jobs:
           cluster_name: lab-cluster
           location: us-central1-a
 
-      - name: Submit libs build to GKE (heavy pool)
+      - name: Submit libs build to GKE (turbo pool)
         run: |
           kubectl apply -f - <<EOF
           apiVersion: batch/v1
@@ -204,7 +204,7 @@ jobs:
             template:
               spec:
                 nodeSelector:
-                  workload: heavy
+                  workload: turbo
                 containers:
                 - name: build
                   image: ${{ env.IMAGE }}:latest
@@ -213,13 +213,13 @@ jobs:
                   - -c
                   - |
                     ${{ env.GIT_SYNC }}
-                    echo "--- Building all libs (parallel=4, using all 4 CPUs) ---"
-                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=4 --verbose
+                    echo "--- Building all libs (parallel=12, turbo 8 CPU) ---"
+                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=12 --verbose
                     echo "--- Libs build complete ---"
                   resources:
                     requests:
-                      cpu: "3000m"
-                      memory: "8Gi"
+                      cpu: "7000m"
+                      memory: "24Gi"
                   volumeMounts:
                   - name: nx-cache
                     mountPath: /app/.nx
