@@ -1,12 +1,13 @@
 FROM node:22-alpine
 
+RUN apk add --no-cache git
+
 WORKDIR /app
 
-# Copy full repo (already cloned)
-COPY . .
+# Clone repo (preserves .git for future fetch)
+RUN git clone --depth=1 https://github.com/madakerez/cli-coordinator.git .
 
 # Install dependencies
 RUN npm ci
 
-# Default command (overridden by jobs)
 CMD ["sh"]

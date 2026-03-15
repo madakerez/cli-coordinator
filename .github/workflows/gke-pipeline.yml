@@ -55,7 +55,7 @@ jobs:
                 containers:
                 - name: lint
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "npx nx run-many --target=lint --projects=app1 --parallel=2 --verbose"]
+                  command: ["sh", "-c", "git fetch --depth=1 origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && npx nx run-many --target=lint --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
@@ -115,7 +115,7 @@ jobs:
                 containers:
                 - name: test
                   image: ${{ env.IMAGE }}:latest
-                  command: ["sh", "-c", "npx nx run-many --target=test --projects=app1 --parallel=2 --verbose"]
+                  command: ["sh", "-c", "git fetch --depth=1 origin ${{ github.sha }} && git reset --hard ${{ github.sha }} && npx nx run-many --target=test --projects=app1 --parallel=2 --verbose"]
                   resources:
                     requests:
                       cpu: "250m"
