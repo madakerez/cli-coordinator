@@ -214,7 +214,7 @@ jobs:
                   - |
                     ${{ env.GIT_SYNC }}
                     echo "--- Building all libs (parallel=10, heavy 6 CPU) ---"
-                    npx nx run-many --target=build --projects='tag:type:lib' --parallel=10 --verbose
+                    npx nx run-many --target=build --exclude='app1,app2,app3,app4' --parallel=10 --verbose
                     echo "--- Libs build complete ---"
                   resources:
                     requests:
@@ -289,7 +289,7 @@ jobs:
                   - |
                     ${{ env.GIT_SYNC }}
                     echo "--- Building all apps (parallel=6, libs from NX cache) ---"
-                    npx nx run-many --target=build --projects='tag:type:app' --parallel=6 --verbose
+                    npx nx run-many --target=build --projects='app1,app2,app3,app4' --parallel=6 --verbose
                     echo "--- Apps build complete ---"
                   resources:
                     requests:
