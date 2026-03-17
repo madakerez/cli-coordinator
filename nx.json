@@ -46,12 +46,8 @@
       "inputs": ["production", "^production"]
     }
   },
-  "s3": {
-    "region": "us-east-1",
-    "bucket": "nx-cache",
-    "endpoint": "https://minio.azerek.dev",
-    "forcePathStyle": true,
-    "localMode": "read-write"
+  "gcs": {
+    "bucket": "nx-cache-lab-cluster"
   },
   "generators": {
     "@nx/angular:application": {
