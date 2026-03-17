@@ -101,10 +101,10 @@ while [ "$i" -le "$RUNS" ]; do
 
   # Disable remote cache for cold baseline
   export NX_SKIP_REMOTE_CACHE=true
-  START=$(date +%s)
+  START=$(node -e "process.stdout.write(String(Date.now()))")
   run_nx_build || true
-  END=$(date +%s)
-  DURATION_MS=$(( (END - START) * 1000 ))
+  END=$(node -e "process.stdout.write(String(Date.now()))")
+  DURATION_MS=$((END - START))
   unset NX_SKIP_REMOTE_CACHE
 
   echo "  → ${DURATION_MS} ms"
@@ -138,10 +138,10 @@ while [ "$i" -le "$RUNS" ]; do
   clear_dist  # clear outputs but keep cache
   export NX_SKIP_REMOTE_CACHE=true
 
-  START=$(date +%s)
+  START=$(node -e "process.stdout.write(String(Date.now()))")
   run_nx_build || true
-  END=$(date +%s)
-  DURATION_MS=$(( (END - START) * 1000 ))
+  END=$(node -e "process.stdout.write(String(Date.now()))")
+  DURATION_MS=$((END - START))
   unset NX_SKIP_REMOTE_CACHE
 
   echo "  → ${DURATION_MS} ms"
@@ -173,10 +173,10 @@ while [ "$i" -le "$RUNS" ]; do
   clear_local_cache  # force fetch from GCS
   clear_dist
 
-  START=$(date +%s)
+  START=$(node -e "process.stdout.write(String(Date.now()))")
   run_nx_build || true
-  END=$(date +%s)
-  DURATION_MS=$(( (END - START) * 1000 ))
+  END=$(node -e "process.stdout.write(String(Date.now()))")
+  DURATION_MS=$((END - START))
 
   echo "  → ${DURATION_MS} ms"
   RESULTS_GCS="${RESULTS_GCS}${RESULTS_GCS:+,}${DURATION_MS}"
@@ -209,10 +209,10 @@ while [ "$i" -le "$RUNS" ]; do
   # Note: GCS may still have entries from scenario 3 on run 2+
   # This measures cold local + GCS write for new entries (or skip if exists)
 
-  START=$(date +%s)
+  START=$(node -e "process.stdout.write(String(Date.now()))")
   run_nx_build || true
-  END=$(date +%s)
-  DURATION_MS=$(( (END - START) * 1000 ))
+  END=$(node -e "process.stdout.write(String(Date.now()))")
+  DURATION_MS=$((END - START))
 
   echo "  → ${DURATION_MS} ms"
   RESULTS_GCS_WRITE="${RESULTS_GCS_WRITE}${RESULTS_GCS_WRITE:+,}${DURATION_MS}"

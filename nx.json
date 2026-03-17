@@ -47,7 +47,9 @@
     }
   },
   "gcs": {
-    "bucket": "nx-cache-lab-cluster"
+    "bucket": "nx-cache-lab-cluster",
+    "localMode": "read-write",
+    "ciMode": "read-write"
   },
   "generators": {
     "@nx/angular:application": {
